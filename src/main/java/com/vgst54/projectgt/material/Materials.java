@@ -27,7 +27,7 @@ public final class Materials {
             RAW_ORE, DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
     public static final Material COPPER = add(Material.of("copper", "Copper", 0xE07040,
             RAW_ORE, DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
-    public static final Material TIN    = add(Material.of("tin",    "Tin",    0xD3D4D5,
+    public static final Material TIN    = add(Material.of("tin",    "Tin",    0xEEF3F7,
             RAW_ORE, DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
 
     // --- Золото: руды нет (пока), мягкое, только заготовки. ---
