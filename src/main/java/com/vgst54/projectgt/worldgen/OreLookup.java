@@ -11,11 +11,12 @@ import com.vgst54.projectgt.registry.ModBlocks;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Подбирает блок руды (материал x тип камня) по вмещающей породе. Только породы Верхнего мира. */
+/** Подбирает блок руды (материал x тип камня) по вмещающей породе. Породы Верхнего мира и Незера. */
 final class OreLookup {
     private static final Set<StoneType> OVERWORLD = Set.of(
             StoneType.STONE, StoneType.DEEPSLATE, StoneType.GRANITE,
-            StoneType.DIORITE, StoneType.ANDESITE, StoneType.TUFF);
+            StoneType.DIORITE, StoneType.ANDESITE, StoneType.TUFF,
+            StoneType.NETHERRACK, StoneType.BLACKSTONE);
 
     // материал.id -> (ванильный камень -> наш блок руды)
     private static volatile Map<String, Map<Block, Block>> table;

@@ -77,6 +77,11 @@ public final class Materials {
     // Золото (самородное) и ванадиевый магнетит
     public static final Material NATIVE_GOLD  = ore("native_gold",  "Native Gold",  0xFFD83A, IconSet.METALLIC);
     public static final Material VANADIUM_MAGNETITE = ore("vanadium_magnetite", "Vanadium Magnetite", 0x4A4F6A, IconSet.METALLIC);
+    // Самоцвет Верхнего мира, сера и кварц Незера (кварц дропает ванильный предмет)
+    public static final Material SAPPHIRE     = ore("sapphire",     "Sapphire",     0x2F5BD6, IconSet.CRYSTAL);
+    public static final Material SULFUR       = ore("sulfur",       "Sulfur",       0xE6D63A, IconSet.MINERAL);
+    public static final Material QUARTZ       = add(Material.of("quartz", "Quartz", 0xE8E0D8, IconSet.CRYSTAL, DUST)
+            .withVanillaRaw(() -> Items.QUARTZ));
 
     private Materials() {}
 

@@ -12,6 +12,7 @@ import com.vgst54.projectgt.worldgen.Vein;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -42,7 +43,7 @@ public final class OreDebugCommand {
     private static int nodes(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack src = ctx.getSource();
         Vec3 p = src.getPosition();
-        List<OreNodes.Node> list = OreNodes.nodesNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS);
+        List<OreNodes.Node> list = OreNodes.nodesNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS, isNether(src));
         if (list.isEmpty()) {
             src.sendSuccess(() -> Component.literal("Рудных узлов рядом нет"), false);
             return 0;
@@ -50,7 +51,7 @@ public final class OreDebugCommand {
         src.sendSuccess(() -> Component.literal("Ближайшие рудные узлы:"), false);
         for (OreNodes.Node n : list.stream().limit(LIMIT).toList()) {
             double dist = Math.hypot(n.x() - p.x, n.z() - p.z);
-            String kind = n.layered() ? "слоистый" : "гидротермальный";
+            String kind = n.kind().title();
             String line = String.format("  X %d, Z %d | %s | радиус %d | до центра %d | жил %d",
                     Math.round(n.x()), Math.round(n.z()), kind, Math.round(n.radius()), Math.round(dist), n.veins().size());
             src.sendSuccess(() -> Component.literal(line), false);
@@ -61,7 +62,7 @@ public final class OreDebugCommand {
     private static int veins(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack src = ctx.getSource();
         Vec3 p = src.getPosition();
-        List<Vein> all = OreNodes.nodesNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS).stream()
+        List<Vein> all = OreNodes.nodesNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS, isNether(src)).stream()
                 .flatMap(n -> n.veins().stream())
                 .sorted(Comparator.comparingDouble(v -> dist3(v, p)))
                 .limit(LIMIT)
@@ -78,6 +79,10 @@ public final class OreDebugCommand {
             src.sendSuccess(() -> Component.literal(line), false);
         }
         return all.size();
+    }
+
+    private static boolean isNether(CommandSourceStack src) {
+        return src.getLevel().dimension() == Level.NETHER;
     }
 
     private static double dist3(Vein v, Vec3 p) {

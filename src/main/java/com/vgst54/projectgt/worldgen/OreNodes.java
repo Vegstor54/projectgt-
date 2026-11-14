@@ -20,8 +20,11 @@ import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
  *    ядро -> олово и вольфрам; дальше медь (с пиритом и золотом); потом свинец и цинк; на краю серебро.
  *
  *  СЛОИСТЫЙ (осадочные и магматические пласты, залежи пологие, колец нет):
- *    узел целиком одного типа из набора LAYERED (железные руды, хром-никель, ванадиевый магнетит, боксит, марганец).
+ *    узел целиком одного типа из набора LAYERED (магнетит с золотом, гематит с лимонитом, хром-никель, боксит, марганец).
  *
+ *  НИЖНИЙ МИР (Незер): небольшие жилы кварца и серы со сфалеритом.
+ *
+ * Кроме того, в любом узле Верхнего мира изредка попадаются мелкие «акцентные» жилы сапфира.
  * Каждая жила содержит СМЕСЬ минералов в заданных долях (см. Type), не больше 4 минералов в одном типе.
  * Жилы стараются не налезать друг на друга (MIN_SEPARATION).
  * Всё считается детерминированно от сида мира, поэтому каждый чанк независимо восстанавливает свои жилы.
@@ -30,14 +33,27 @@ public final class OreNodes {
     // ---- Крутилки баланса ----
     public static final int CELL = 512;
     public static final float NODE_CHANCE = 0.65f;
-    /** Доля слоистых узлов среди всех. */
+    /** Доля слоистых узлов среди узлов Верхнего мира. */
     public static final float LAYERED_SHARE = 0.30f;
+    /** Шанс узла в ячейке Нижнего мира. */
+    public static final float NETHER_NODE_CHANCE = 0.80f;
+    /** Шанс того, что очередная жила Верхнего мира окажется мелкой жилой сапфира. */
+    public static final float ACCENT_CHANCE = 0.06f;
 
     public static final double HYDRO_RADIUS_MIN = 110, HYDRO_RADIUS_VAR = 90;
     public static final int HYDRO_VEINS_MIN = 40, HYDRO_VEINS_VAR = 26;
 
     public static final double LAYER_RADIUS_MIN = 90, LAYER_RADIUS_VAR = 70;
     public static final int LAYER_VEINS_MIN = 14, LAYER_VEINS_VAR = 11;
+
+    public static final double NETHER_RADIUS_MIN = 80, NETHER_RADIUS_VAR = 50;
+    public static final int NETHER_VEINS_MIN = 24, NETHER_VEINS_VAR = 13;
+
+    /**
+     * Плотность руды внутри жилы: на краю линзы EDGE, в самом центре CORE (доля блоков руды).
+     * Остальное остаётся вмещающей породой, то есть вкрапления камня есть даже в ядре.
+     */
+    public static final double DENSITY_EDGE = 0.25, DENSITY_CORE = 0.80;
 
     /** Попыток найти место жиле, не налезающее на соседние; после неудач ставим как есть. */
     public static final int PLACE_ATTEMPTS = 16;
@@ -49,6 +65,21 @@ public final class OreNodes {
 
     /** Границы колец гидротермального узла (доля радиуса). */
     public static final double RING_TIN = 0.25, RING_COPPER = 0.50, RING_LEADZINC = 0.80;
+
+    /** Вид узла. */
+    public enum Kind {
+        HYDROTHERMAL("гидротермальный"), LAYERED("слоистый"), NETHER("незер");
+
+        private final String title;
+
+        Kind(String title) {
+            this.title = title;
+        }
+
+        public String title() {
+            return title;
+        }
+    }
 
     /** Тип жилы: диапазон высот и состав. Доли в процентах (сумма не обязана быть 100). */
     private record Type(int yMin, int yMax, Mix mix) {}
@@ -81,11 +112,20 @@ public final class OreNodes {
             // марганцевые залежи
             new Type(-8, 48, Mix.of(p(Materials.PYROLUSITE, 70), p(Materials.SIDERITE, 15), p(Materials.LIMONITE, 15))));
 
-    private record CellKey(long seed, int cellX, int cellZ) {}
+    // ---- Акцентная жила Верхнего мира ----
+    private static final Type SAPPHIRE = new Type(-48, 24, Mix.of(
+            p(Materials.SAPPHIRE, 75), p(Materials.BAUXITE, 25)));
+
+    // ---- Нижний мир ----
+    private static final Type QUARTZ_VEIN = new Type(10, 110, Mix.of(p(Materials.QUARTZ, 100)));
+    private static final Type SULFUR_VEIN = new Type(10, 110, Mix.of(
+            p(Materials.SULFUR, 70), p(Materials.SPHALERITE, 30)));
+
+    private record CellKey(long seed, int cellX, int cellZ, boolean nether) {}
 
     /** Рудный узел: центр, радиус, вид и все его жилы. NONE = в ячейке узла нет. */
-    public record Node(double x, double z, double radius, boolean layered, List<Vein> veins) {
-        public static final Node NONE = new Node(0, 0, 0, false, List.of());
+    public record Node(double x, double z, double radius, Kind kind, List<Vein> veins) {
+        public static final Node NONE = new Node(0, 0, 0, Kind.HYDROTHERMAL, List.of());
 
         public boolean exists() {
             return radius > 0;
@@ -94,23 +134,23 @@ public final class OreNodes {
 
     private static final Map<CellKey, Node> CACHE = new ConcurrentHashMap<>();
 
-    public static Node nodeOfCell(long seed, int cellX, int cellZ) {
+    public static Node nodeOfCell(long seed, int cellX, int cellZ, boolean nether) {
         if (CACHE.size() > 256) CACHE.clear();
-        return CACHE.computeIfAbsent(new CellKey(seed, cellX, cellZ), OreNodes::generate);
+        return CACHE.computeIfAbsent(new CellKey(seed, cellX, cellZ, nether), OreNodes::generate);
     }
 
-    public static List<Vein> veinsOfCell(long seed, int cellX, int cellZ) {
-        return nodeOfCell(seed, cellX, cellZ).veins();
+    public static List<Vein> veinsOfCell(long seed, int cellX, int cellZ, boolean nether) {
+        return nodeOfCell(seed, cellX, cellZ, nether).veins();
     }
 
     /** Существующие узлы в ячейках вокруг точки (радиус searchCells ячеек), от ближнего к дальнему. */
-    public static List<Node> nodesNear(long seed, double x, double z, int searchCells) {
+    public static List<Node> nodesNear(long seed, double x, double z, int searchCells, boolean nether) {
         int cx = Math.floorDiv((int) Math.floor(x), CELL);
         int cz = Math.floorDiv((int) Math.floor(z), CELL);
         List<Node> found = new ArrayList<>();
         for (int dx = -searchCells; dx <= searchCells; dx++) {
             for (int dz = -searchCells; dz <= searchCells; dz++) {
-                Node n = nodeOfCell(seed, cx + dx, cz + dz);
+                Node n = nodeOfCell(seed, cx + dx, cz + dz, nether);
                 if (n.exists()) found.add(n);
             }
         }
@@ -119,9 +159,17 @@ public final class OreNodes {
     }
 
     private static Node generate(CellKey key) {
-        RandomSource r = new XoroshiroRandomSource(mix(mix(key.seed() ^ key.cellX()) ^ key.cellZ()));
-        if (r.nextFloat() > NODE_CHANCE) return Node.NONE;
-        boolean layered = r.nextFloat() < LAYERED_SHARE;
+        long salt = key.nether() ? 0x4E45544845524CL : 0L;
+        RandomSource r = new XoroshiroRandomSource(mix(mix(key.seed() ^ key.cellX()) ^ key.cellZ()) ^ salt);
+
+        Kind kind;
+        if (key.nether()) {
+            if (r.nextFloat() > NETHER_NODE_CHANCE) return Node.NONE;
+            kind = Kind.NETHER;
+        } else {
+            if (r.nextFloat() > NODE_CHANCE) return Node.NONE;
+            kind = r.nextFloat() < LAYERED_SHARE ? Kind.LAYERED : Kind.HYDROTHERMAL;
+        }
 
         double nodeX = key.cellX() * (double) CELL + 96 + r.nextDouble() * (CELL - 192);
         double nodeZ = key.cellZ() * (double) CELL + 96 + r.nextDouble() * (CELL - 192);
@@ -129,20 +177,52 @@ public final class OreNodes {
         double radius;
         int count;
         Type layerType = null;   // слоистый узел целиком одного типа: не больше 4 минералов на узел
-        if (layered) {
-            radius = LAYER_RADIUS_MIN + r.nextDouble() * LAYER_RADIUS_VAR;
-            count = LAYER_VEINS_MIN + r.nextInt(LAYER_VEINS_VAR);
-            layerType = LAYERED.get(r.nextInt(LAYERED.size()));
-        } else {
-            radius = HYDRO_RADIUS_MIN + r.nextDouble() * HYDRO_RADIUS_VAR;
-            count = HYDRO_VEINS_MIN + r.nextInt(HYDRO_VEINS_VAR);
+        switch (kind) {
+            case LAYERED -> {
+                radius = LAYER_RADIUS_MIN + r.nextDouble() * LAYER_RADIUS_VAR;
+                count = LAYER_VEINS_MIN + r.nextInt(LAYER_VEINS_VAR);
+                layerType = LAYERED.get(r.nextInt(LAYERED.size()));
+            }
+            case NETHER -> {
+                radius = NETHER_RADIUS_MIN + r.nextDouble() * NETHER_RADIUS_VAR;
+                count = NETHER_VEINS_MIN + r.nextInt(NETHER_VEINS_VAR);
+            }
+            default -> {
+                radius = HYDRO_RADIUS_MIN + r.nextDouble() * HYDRO_RADIUS_VAR;
+                count = HYDRO_VEINS_MIN + r.nextInt(HYDRO_VEINS_VAR);
+            }
         }
 
         List<Vein> out = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
+            // Тип, не зависящий от кольца: акцент, жилы Незера, слоистый узел
+            Type fixed = null;
+            if (kind != Kind.NETHER && r.nextFloat() < ACCENT_CHANCE) {
+                fixed = SAPPHIRE;
+            } else if (kind == Kind.NETHER) {
+                fixed = r.nextBoolean() ? QUARTZ_VEIN : SULFUR_VEIN;
+            } else if (kind == Kind.LAYERED) {
+                fixed = layerType;
+            }
+
             // Размеры и наклон
             double a, b, c, dipDeg;
-            if (layered) {
+            if (fixed == SAPPHIRE) {
+                a = 6 + r.nextDouble() * 6;     // длина 12-24
+                b = 5 + r.nextDouble() * 4;
+                c = 1.5 + r.nextDouble() * 1.0; // толщина 3-5
+                dipDeg = 30 + r.nextDouble() * 55;
+            } else if (fixed == QUARTZ_VEIN) {
+                a = 7 + r.nextDouble() * 7;     // небольшая жила
+                b = 5 + r.nextDouble() * 5;
+                c = 1.5 + r.nextDouble() * 1.5;
+                dipDeg = 20 + r.nextDouble() * 65;
+            } else if (fixed == SULFUR_VEIN) {
+                a = 12 + r.nextDouble() * 12;
+                b = 8 + r.nextDouble() * 8;
+                c = 2.0 + r.nextDouble() * 2.0;
+                dipDeg = 20 + r.nextDouble() * 65;
+            } else if (kind == Kind.LAYERED) {
                 // Пологие пласты
                 a = 14 + r.nextDouble() * 16;   // длина 28-60
                 b = 10 + r.nextDouble() * 10;   // ширина 20-40
@@ -165,7 +245,7 @@ public final class OreNodes {
                 double ang = r.nextDouble() * Math.PI * 2;
                 vx = nodeX + Math.cos(ang) * t * radius;
                 vz = nodeZ + Math.sin(ang) * t * radius;
-                type = layered ? layerType : hydroType(t + (r.nextDouble() - 0.5) * 0.1, r);
+                type = fixed != null ? fixed : hydroType(t + (r.nextDouble() - 0.5) * 0.1, r);
                 vy = type.yMin() + r.nextDouble() * (type.yMax() - type.yMin());
                 if (!overlaps(out, vx, vy, vz, reach)) break;
             }
@@ -182,7 +262,7 @@ public final class OreNodes {
                     sn * sd, -cd, -cs * sd,
                     type.mix()));
         }
-        return new Node(nodeX, nodeZ, radius, layered, List.copyOf(out));
+        return new Node(nodeX, nodeZ, radius, kind, List.copyOf(out));
     }
 
     private static boolean overlaps(List<Vein> placed, double x, double y, double z, double reach) {
