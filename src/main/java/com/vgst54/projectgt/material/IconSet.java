@@ -33,10 +33,6 @@ public enum IconSet {
     }
 
     public ResourceLocation texture(MaterialForm form) {
-        ResourceLocation vanilla = form.vanillaTexture();
-        if (vanilla != null) {
-            return vanilla;
-        }
         String path = overrides.contains(form)
                 ? "item/material/" + folder + "/" + form.suffix()
                 : "item/material/" + form.suffix();
