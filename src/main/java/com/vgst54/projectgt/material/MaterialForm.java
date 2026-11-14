@@ -12,7 +12,12 @@ public enum MaterialForm {
     DUST("dust", "dusts", "%s Dust"),
     INGOT("ingot", "ingots", "%s Ingot"),
     PLATE("plate", "plates", "%s Plate"),
-    ROD("rod", "rods", "%s Rod");
+    ROD("rod", "rods", "%s Rod"),
+    DOUBLE_INGOT("double_ingot", "double_ingots", "Double %s Ingot"),
+    GEAR("gear", "gears", "%s Gear"),
+    SMALL_GEAR("small_gear", "small_gears", "Small %s Gear"),
+    SPRING("spring", "springs", "%s Spring"),
+    SMALL_SPRING("small_spring", "small_springs", "Small %s Spring");
 
     private final String suffix;
     private final String tagFolder;
