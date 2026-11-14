@@ -78,7 +78,7 @@ public class OreNodeFeature extends Feature<NoneFeatureConfiguration> {
                     double richness = 1.0 - Math.sqrt(d2);
 
                     // На краях жила рваная, в ядре сплошная
-                    if (OreNodes.hash01(v.seed(), x, y, z) > 0.30 + 0.70 * richness) continue;
+                    if (OreNodes.hash01(v.seed(), x, y, z) > 0.50 + 0.50 * richness) continue;
 
                     pos.set(x, y, z);
                     Block ore = OreLookup.oreFor(v.material(), level.getBlockState(pos));

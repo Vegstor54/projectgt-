@@ -31,7 +31,7 @@ public final class OreNodes {
     public static final float LAYERED_SHARE = 0.30f;
 
     public static final double HYDRO_RADIUS_MIN = 110, HYDRO_RADIUS_VAR = 90;
-    public static final int HYDRO_VEINS_MIN = 35, HYDRO_VEINS_VAR = 26;
+    public static final int HYDRO_VEINS_MIN = 40, HYDRO_VEINS_VAR = 26;
 
     public static final double LAYER_RADIUS_MIN = 90, LAYER_RADIUS_VAR = 70;
     public static final int LAYER_VEINS_MIN = 14, LAYER_VEINS_VAR = 11;
@@ -63,16 +63,44 @@ public final class OreNodes {
 
     private record CellKey(long seed, int cellX, int cellZ) {}
 
-    private static final Map<CellKey, List<Vein>> CACHE = new ConcurrentHashMap<>();
+    /** Рудный узел: центр, радиус, вид и все его жилы. NONE = в ячейке узла нет. */
+    public record Node(double x, double z, double radius, boolean layered, List<Vein> veins) {
+        public static final Node NONE = new Node(0, 0, 0, false, List.of());
 
-    public static List<Vein> veinsOfCell(long seed, int cellX, int cellZ) {
+        public boolean exists() {
+            return radius > 0;
+        }
+    }
+
+    private static final Map<CellKey, Node> CACHE = new ConcurrentHashMap<>();
+
+    public static Node nodeOfCell(long seed, int cellX, int cellZ) {
         if (CACHE.size() > 256) CACHE.clear();
         return CACHE.computeIfAbsent(new CellKey(seed, cellX, cellZ), OreNodes::generate);
     }
 
-    private static List<Vein> generate(CellKey key) {
+    public static List<Vein> veinsOfCell(long seed, int cellX, int cellZ) {
+        return nodeOfCell(seed, cellX, cellZ).veins();
+    }
+
+    /** Существующие узлы в ячейках вокруг точки (радиус searchCells ячеек), от ближнего к дальнему. */
+    public static List<Node> nodesNear(long seed, double x, double z, int searchCells) {
+        int cx = Math.floorDiv((int) Math.floor(x), CELL);
+        int cz = Math.floorDiv((int) Math.floor(z), CELL);
+        List<Node> found = new ArrayList<>();
+        for (int dx = -searchCells; dx <= searchCells; dx++) {
+            for (int dz = -searchCells; dz <= searchCells; dz++) {
+                Node n = nodeOfCell(seed, cx + dx, cz + dz);
+                if (n.exists()) found.add(n);
+            }
+        }
+        found.sort(java.util.Comparator.comparingDouble(n -> Math.hypot(n.x() - x, n.z() - z)));
+        return found;
+    }
+
+    private static Node generate(CellKey key) {
         RandomSource r = new XoroshiroRandomSource(mix(mix(key.seed() ^ key.cellX()) ^ key.cellZ()));
-        if (r.nextFloat() > NODE_CHANCE) return List.of();
+        if (r.nextFloat() > NODE_CHANCE) return Node.NONE;
         boolean layered = r.nextFloat() < LAYERED_SHARE;
 
         double nodeX = key.cellX() * (double) CELL + 96 + r.nextDouble() * (CELL - 192);
@@ -105,16 +133,16 @@ public final class OreNodes {
             if (layered) {
                 m = r.nextBoolean() ? layerA : layerB;
                 // Пологие широкие пласты
-                a = 18 + r.nextDouble() * 22;
-                b = 12 + r.nextDouble() * 14;
-                c = 1.5 + r.nextDouble() * 2.0;
+                a = 24 + r.nextDouble() * 26;   // длина 48-100
+                b = 16 + r.nextDouble() * 16;   // ширина 32-64
+                c = 2.5 + r.nextDouble() * 2.0; // толщина 5-9
                 dipDeg = 5 + r.nextDouble() * 25;
             } else {
                 m = hydroMineral(t + (r.nextDouble() - 0.5) * 0.1, r);
                 // Крутые жилы
-                a = 10 + r.nextDouble() * 20;
-                b = 6 + r.nextDouble() * 10;
-                c = 1.3 + r.nextDouble() * 1.7;
+                a = 18 + r.nextDouble() * 22;   // длина 36-80
+                b = 10 + r.nextDouble() * 12;   // высота 20-44
+                c = 2.5 + r.nextDouble() * 2.0; // толщина 5-9
                 dipDeg = 50 + r.nextDouble() * 35;
             }
             double vy = m.yMin() + r.nextDouble() * (m.yMax() - m.yMin());
@@ -131,7 +159,7 @@ public final class OreNodes {
                     sn * sd, -cd, -cs * sd,
                     m.material()));
         }
-        return List.copyOf(out);
+        return new Node(nodeX, nodeZ, radius, layered, List.copyOf(out));
     }
 
     /** Минерал гидротермального узла по расстоянию от центра (ring: 0 = центр, 1 = край). */
