@@ -2,6 +2,8 @@ package com.vgst54.projectgt.worldgen;
 
 import java.util.List;
 
+import com.vgst54.projectgt.material.Material;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
@@ -81,7 +83,9 @@ public class OreNodeFeature extends Feature<NoneFeatureConfiguration> {
                     if (OreNodes.hash01(v.seed(), x, y, z) > 0.50 + 0.50 * richness) continue;
 
                     pos.set(x, y, z);
-                    Block ore = OreLookup.oreFor(v.material(), level.getBlockState(pos));
+                    // Минерал из состава жилы; выбор по кластерам 2x2x2, чтобы получались пятна, а не соль с перцем
+                    Material mineral = v.mix().pick(OreNodes.hash01(v.seed() ^ 0x5bd1e995L, x >> 1, y >> 1, z >> 1));
+                    Block ore = OreLookup.oreFor(mineral, level.getBlockState(pos));
                     if (ore == null) continue; // не наша вмещающая порода (воздух, вода, руда и т.п.)
 
                     level.setBlock(pos, ore.defaultBlockState(), 2);

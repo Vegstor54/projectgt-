@@ -74,6 +74,9 @@ public final class Materials {
     public static final Material CHROMITE     = ore("chromite",     "Chromite",     0x2D3A33, IconSet.METALLIC);
     public static final Material PYROLUSITE   = ore("pyrolusite",   "Pyrolusite",   0x34343E, IconSet.METALLIC);
     public static final Material BAUXITE      = ore("bauxite",      "Bauxite",      0xB85C38, IconSet.MINERAL);
+    // Золото (самородное) и ванадиевый магнетит
+    public static final Material NATIVE_GOLD  = ore("native_gold",  "Native Gold",  0xFFD83A, IconSet.METALLIC);
+    public static final Material VANADIUM_MAGNETITE = ore("vanadium_magnetite", "Vanadium Magnetite", 0x4A4F6A, IconSet.METALLIC);
 
     private Materials() {}
 
