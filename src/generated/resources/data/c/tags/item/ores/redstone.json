@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_redstone_ore",
+    "projectgt:deepslate_redstone_ore",
+    "projectgt:granite_redstone_ore",
+    "projectgt:diorite_redstone_ore",
+    "projectgt:andesite_redstone_ore",
+    "projectgt:tuff_redstone_ore",
+    "projectgt:netherrack_redstone_ore",
+    "projectgt:blackstone_redstone_ore",
+    "projectgt:end_stone_redstone_ore"
+  ]
+}

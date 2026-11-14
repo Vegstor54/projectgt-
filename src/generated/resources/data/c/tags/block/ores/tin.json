@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_tin_ore",
+    "projectgt:deepslate_tin_ore",
+    "projectgt:granite_tin_ore",
+    "projectgt:diorite_tin_ore",
+    "projectgt:andesite_tin_ore",
+    "projectgt:tuff_tin_ore",
+    "projectgt:netherrack_tin_ore",
+    "projectgt:blackstone_tin_ore",
+    "projectgt:end_stone_tin_ore"
+  ]
+}

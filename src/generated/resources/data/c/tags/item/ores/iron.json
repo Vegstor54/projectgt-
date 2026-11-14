@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_iron_ore",
+    "projectgt:deepslate_iron_ore",
+    "projectgt:granite_iron_ore",
+    "projectgt:diorite_iron_ore",
+    "projectgt:andesite_iron_ore",
+    "projectgt:tuff_iron_ore",
+    "projectgt:netherrack_iron_ore",
+    "projectgt:blackstone_iron_ore",
+    "projectgt:end_stone_iron_ore"
+  ]
+}
