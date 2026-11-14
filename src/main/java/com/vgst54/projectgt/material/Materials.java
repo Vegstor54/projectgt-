@@ -14,6 +14,8 @@ import static com.vgst54.projectgt.material.MaterialForm.SMALL_GEAR;
 import static com.vgst54.projectgt.material.MaterialForm.SMALL_SPRING;
 import static com.vgst54.projectgt.material.MaterialForm.SPRING;
 
+import net.minecraft.world.item.Items;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,9 +26,10 @@ public final class Materials {
 
     // --- Металлы (руда есть). Ванильные: слитков тут нет, они уже есть в игре. ---
     public static final Material IRON   = add(Material.of("iron",   "Iron",   0xC8C8C8,
-            RAW_ORE, DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withOreColor(0xD9A98A));
+            DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withOreColor(0xD9A98A).withVanillaRaw(() -> Items.RAW_IRON));
     public static final Material COPPER = add(Material.of("copper", "Copper", 0xE07040,
-            RAW_ORE, DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
+            DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING)
+            .withVanillaRaw(() -> Items.RAW_COPPER));
     public static final Material TIN    = add(Material.of("tin",    "Tin",    0xEEF3F7,
             RAW_ORE, DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
 

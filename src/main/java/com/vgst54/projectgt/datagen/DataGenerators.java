@@ -106,7 +106,7 @@ public final class DataGenerators {
         protected void generate() {
             ModBlocks.ores().forEach(ore -> {
                 Block block = ore.block().get();
-                add(block, createOreDrop(block, ModItems.get(ore.material(), MaterialForm.RAW_ORE).get()));
+                add(block, createOreDrop(block, ModItems.rawOre(ore.material())));
             });
         }
 
@@ -153,7 +153,7 @@ public final class DataGenerators {
                 tag(OreTags.block(ore.material())).add(block);
             });
             for (Material material : Materials.all()) {
-                if (material.has(MaterialForm.RAW_ORE)) {
+                if (material.hasOre()) {
                     tag(OreTags.ALL_BLOCKS).addTag(OreTags.block(material));
                 }
             }
@@ -174,7 +174,7 @@ public final class DataGenerators {
                     tag(form.tag(material)).add(item);
                     tag(form.formTag()).addTag(form.tag(material));
                 }
-                if (material.has(MaterialForm.RAW_ORE)) {
+                if (material.hasOre()) {
                     copy(OreTags.block(material), OreTags.item(material));
                 }
             }

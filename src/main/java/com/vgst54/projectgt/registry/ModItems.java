@@ -40,6 +40,17 @@ public final class ModItems {
         return item;
     }
 
+    /** Предмет, который дропает руда материала: своя сырая руда или ванильная. */
+    public static Item rawOre(Material material) {
+        if (material.has(MaterialForm.RAW_ORE)) {
+            return get(material, MaterialForm.RAW_ORE).get();
+        }
+        if (material.vanillaRaw() != null) {
+            return material.vanillaRaw().get();
+        }
+        throw new IllegalArgumentException(material.id() + " has no raw ore");
+    }
+
     /** Все предметы материалов в порядке объявления материалов и форм. */
     public static Stream<DeferredItem<Item>> materialItems() {
         return Materials.all().stream().flatMap(m -> MATERIAL_ITEMS.get(m).values().stream());

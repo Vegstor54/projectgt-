@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.block.StoneType;
 import com.vgst54.projectgt.material.Material;
-import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.material.Materials;
 
 import net.minecraft.world.item.BlockItem;
@@ -32,7 +31,7 @@ public final class ModBlocks {
 
     static {
         for (Material material : Materials.all()) {
-            if (!material.has(MaterialForm.RAW_ORE)) {
+            if (!material.hasOre()) {
                 continue;
             }
             for (StoneType stone : StoneType.values()) {
