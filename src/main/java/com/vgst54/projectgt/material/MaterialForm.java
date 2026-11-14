@@ -9,7 +9,8 @@ import net.minecraft.world.item.Item;
 public enum MaterialForm {
     RAW_ORE("raw_ore", "raw_materials", "Raw %s Ore"),
     DUST("dust", "dusts", "%s Dust"),
-    INGOT("ingot", "ingots", "%s Ingot"),
+    // Слиток берёт ванильную текстуру по ссылке (файл не копируется), цвет даёт тонировка.
+    INGOT("ingot", "ingots", "%s Ingot", "item/iron_ingot"),
     PLATE("plate", "plates", "%s Plate"),
     DOUBLE_PLATE("double_plate", "double_plates", "Double %s Plate"),
     BOLT("bolt", "bolts", "%s Bolt"),
@@ -24,11 +25,22 @@ public enum MaterialForm {
     private final String suffix;
     private final String tagFolder;
     private final String nameFormat;
+    /** Путь ванильной текстуры (minecraft:...), если форма использует её вместо собственной; иначе null. */
+    private final String vanillaTexture;
 
     MaterialForm(String suffix, String tagFolder, String nameFormat) {
+        this(suffix, tagFolder, nameFormat, null);
+    }
+
+    MaterialForm(String suffix, String tagFolder, String nameFormat, String vanillaTexture) {
         this.suffix = suffix;
         this.tagFolder = tagFolder;
         this.nameFormat = nameFormat;
+        this.vanillaTexture = vanillaTexture;
+    }
+
+    public ResourceLocation vanillaTexture() {
+        return vanillaTexture == null ? null : ResourceLocation.withDefaultNamespace(vanillaTexture);
     }
 
     public String suffix() {
