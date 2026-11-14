@@ -51,7 +51,36 @@ public final class Materials {
     public static final Material REDSTONE = add(Material.of("redstone", "Redstone", 0xE02020, IconSet.MINERAL,
             RAW_ORE));
 
+    // --- Минералы-руды (из них добывается металл; сами по себе не слитки) ---
+    // Олово и вольфрам: ядро гранитного узла
+    public static final Material CASSITERITE  = ore("cassiterite",  "Cassiterite",  0x5A4636, IconSet.METALLIC);
+    public static final Material WOLFRAMITE   = ore("wolframite",   "Wolframite",   0x2E2A2C, IconSet.METALLIC);
+    // Медь
+    public static final Material CHALCOPYRITE = ore("chalcopyrite", "Chalcopyrite", 0xD6B23A, IconSet.METALLIC);
+    public static final Material MALACHITE    = ore("malachite",    "Malachite",    0x2FA36B, IconSet.MINERAL);
+    // Колчедан: спутник сульфидных жил
+    public static final Material PYRITE       = ore("pyrite",       "Pyrite",       0xE0C060, IconSet.METALLIC);
+    // Свинец, цинк, серебро
+    public static final Material GALENA       = ore("galena",       "Galena",       0x6A7386, IconSet.METALLIC);
+    public static final Material SPHALERITE   = ore("sphalerite",   "Sphalerite",   0xA8763A, IconSet.METALLIC);
+    public static final Material ARGENTITE    = ore("argentite",    "Argentite",    0x9AA0A8, IconSet.METALLIC);
+    // Железо
+    public static final Material HEMATITE     = ore("hematite",     "Hematite",     0x8B2E22, IconSet.METALLIC);
+    public static final Material MAGNETITE    = ore("magnetite",    "Magnetite",    0x3A3F4A, IconSet.METALLIC);
+    public static final Material LIMONITE     = ore("limonite",     "Limonite",     0xB8782E, IconSet.MINERAL); // бурый железняк
+    public static final Material SIDERITE     = ore("siderite",     "Siderite",     0xA8895C, IconSet.MINERAL);
+    // Никель, хром, марганец, алюминий
+    public static final Material PENTLANDITE  = ore("pentlandite",  "Pentlandite",  0xB8A860, IconSet.METALLIC);
+    public static final Material CHROMITE     = ore("chromite",     "Chromite",     0x2D3A33, IconSet.METALLIC);
+    public static final Material PYROLUSITE   = ore("pyrolusite",   "Pyrolusite",   0x34343E, IconSet.METALLIC);
+    public static final Material BAUXITE      = ore("bauxite",      "Bauxite",      0xB85C38, IconSet.MINERAL);
+
     private Materials() {}
+
+    /** Минерал-руда: сырая руда и пыль. */
+    private static Material ore(String id, String name, int rgb, IconSet icons) {
+        return add(Material.of(id, name, rgb, icons, RAW_ORE, DUST));
+    }
 
     private static Material add(Material material) {
         ALL.add(material);
