@@ -1,7 +1,5 @@
 package com.vgst54.projectgt.material;
 
-import com.vgst54.projectgt.ProjectGT;
-
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -9,6 +7,7 @@ import net.minecraft.world.item.Item;
 
 /** Форма материала. Определяет суффикс id, папку common-тега и шаблон названия. */
 public enum MaterialForm {
+    RAW_ORE("raw_ore", "raw_materials", "Raw %s Ore"),
     DUST("dust", "dusts", "%s Dust"),
     INGOT("ingot", "ingots", "%s Ingot"),
     PLATE("plate", "plates", "%s Plate"),
@@ -36,9 +35,9 @@ public enum MaterialForm {
         return suffix;
     }
 
-    /** Путь текстуры формы: projectgt:item/material/<suffix> */
-    public ResourceLocation texture() {
-        return ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "item/material/" + suffix);
+    /** Текстура формы с учётом набора иконок материала. */
+    public ResourceLocation texture(Material material) {
+        return material.iconSet().texture(this);
     }
 
     public String itemId(Material material) {

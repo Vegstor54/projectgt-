@@ -48,7 +48,7 @@ public final class DataGenerators {
         @Override
         protected void registerModels() {
             ModItems.byMaterial().forEach(entry -> entry.getValue().forEach((form, item) ->
-                    withExistingParent(item.getId().getPath(), "item/generated").texture("layer0", form.texture())));
+                    withExistingParent(item.getId().getPath(), "item/generated").texture("layer0", form.texture(entry.getKey()))));
         }
     }
 
