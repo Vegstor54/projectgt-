@@ -20,9 +20,10 @@ import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
  *    ядро -> олово и вольфрам; дальше медь (с пиритом и золотом); потом свинец и цинк; на краю серебро.
  *
  *  СЛОИСТЫЙ (осадочные и магматические пласты, залежи пологие, колец нет):
- *    у узла два типа залежи из набора LAYERED (железные руды, хром-никель, ванадиевый магнетит, боксит, марганец).
+ *    узел целиком одного типа из набора LAYERED (железные руды, хром-никель, ванадиевый магнетит, боксит, марганец).
  *
- * Каждая жила содержит СМЕСЬ минералов в заданных долях (см. Type), а не один минерал.
+ * Каждая жила содержит СМЕСЬ минералов в заданных долях (см. Type), не больше 4 минералов в одном типе.
+ * Жилы стараются не налезать друг на друга (MIN_SEPARATION).
  * Всё считается детерминированно от сида мира, поэтому каждый чанк независимо восстанавливает свои жилы.
  */
 public final class OreNodes {
@@ -37,6 +38,11 @@ public final class OreNodes {
 
     public static final double LAYER_RADIUS_MIN = 90, LAYER_RADIUS_VAR = 70;
     public static final int LAYER_VEINS_MIN = 14, LAYER_VEINS_VAR = 11;
+
+    /** Попыток найти место жиле, не налезающее на соседние; после неудач ставим как есть. */
+    public static final int PLACE_ATTEMPTS = 16;
+    /** Минимальное расстояние между центрами жил как доля суммы их радиусов. */
+    public static final double MIN_SEPARATION = 0.5;
 
     /** Степень распределения жил по радиусу: 0.5 = равномерно по площади, больше = гуще к центру. */
     public static final double CENTER_BIAS = 0.6;
@@ -125,14 +131,11 @@ public final class OreNodes {
 
         double radius;
         int count;
-        Type typeA = null, typeB = null;
+        Type layerType = null;   // слоистый узел целиком одного типа: не больше 4 минералов на узел
         if (layered) {
             radius = LAYER_RADIUS_MIN + r.nextDouble() * LAYER_RADIUS_VAR;
             count = LAYER_VEINS_MIN + r.nextInt(LAYER_VEINS_VAR);
-            int i = r.nextInt(LAYERED.size());
-            int j = (i + 1 + r.nextInt(LAYERED.size() - 1)) % LAYERED.size();
-            typeA = LAYERED.get(i);
-            typeB = LAYERED.get(j);
+            layerType = LAYERED.get(r.nextInt(LAYERED.size()));
         } else {
             radius = HYDRO_RADIUS_MIN + r.nextDouble() * HYDRO_RADIUS_VAR;
             count = HYDRO_VEINS_MIN + r.nextInt(HYDRO_VEINS_VAR);
@@ -140,29 +143,35 @@ public final class OreNodes {
 
         List<Vein> out = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            double t = Math.pow(r.nextDouble(), CENTER_BIAS);   // 0 = центр узла, 1 = край
-            double ang = r.nextDouble() * Math.PI * 2;
-            double vx = nodeX + Math.cos(ang) * t * radius;
-            double vz = nodeZ + Math.sin(ang) * t * radius;
-
-            Type type;
+            // Размеры и наклон
             double a, b, c, dipDeg;
             if (layered) {
-                type = r.nextBoolean() ? typeA : typeB;
-                // Пологие широкие пласты
-                a = 24 + r.nextDouble() * 26;   // длина 48-100
-                b = 16 + r.nextDouble() * 16;   // ширина 32-64
+                // Пологие пласты
+                a = 14 + r.nextDouble() * 16;   // длина 28-60
+                b = 10 + r.nextDouble() * 10;   // ширина 20-40
                 c = 2.5 + r.nextDouble() * 2.0; // толщина 5-9
                 dipDeg = 5 + r.nextDouble() * 25;
             } else {
-                type = hydroType(t + (r.nextDouble() - 0.5) * 0.1, r);
                 // Крутые жилы
                 a = 18 + r.nextDouble() * 22;   // длина 36-80
                 b = 10 + r.nextDouble() * 12;   // высота 20-44
                 c = 2.5 + r.nextDouble() * 2.0; // толщина 5-9
                 dipDeg = 50 + r.nextDouble() * 35;
             }
-            double vy = type.yMin() + r.nextDouble() * (type.yMax() - type.yMin());
+            double reach = Math.max(a, Math.max(b, c)) + 1;
+
+            // Позиция: несколько попыток найти место, не налезающее на уже стоящие жилы
+            double vx = 0, vy = 0, vz = 0;
+            Type type = null;
+            for (int attempt = 0; attempt < PLACE_ATTEMPTS; attempt++) {
+                double t = Math.pow(r.nextDouble(), CENTER_BIAS);   // 0 = центр узла, 1 = край
+                double ang = r.nextDouble() * Math.PI * 2;
+                vx = nodeX + Math.cos(ang) * t * radius;
+                vz = nodeZ + Math.sin(ang) * t * radius;
+                type = layered ? layerType : hydroType(t + (r.nextDouble() - 0.5) * 0.1, r);
+                vy = type.yMin() + r.nextDouble() * (type.yMax() - type.yMin());
+                if (!overlaps(out, vx, vy, vz, reach)) break;
+            }
 
             // Ориентация: простирание theta, падение dip (от горизонтали)
             double theta = r.nextDouble() * Math.PI;
@@ -177,6 +186,15 @@ public final class OreNodes {
                     type.mix()));
         }
         return new Node(nodeX, nodeZ, radius, layered, List.copyOf(out));
+    }
+
+    private static boolean overlaps(List<Vein> placed, double x, double y, double z, double reach) {
+        for (Vein o : placed) {
+            double dx = o.cx() - x, dy = o.cy() - y, dz = o.cz() - z;
+            double min = MIN_SEPARATION * (o.reach() + reach);
+            if (dx * dx + dy * dy + dz * dz < min * min) return true;
+        }
+        return false;
     }
 
     /** Тип жилы гидротермального узла по расстоянию от центра (ring: 0 = центр, 1 = край). */
