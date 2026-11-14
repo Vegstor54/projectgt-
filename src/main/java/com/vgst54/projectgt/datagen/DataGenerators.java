@@ -61,6 +61,13 @@ public final class DataGenerators {
         protected void addTranslations() {
             add(ModCreativeTabs.MATERIALS_TITLE_KEY, "Project-GT+++ Materials");
             add(ModCreativeTabs.ORES_TITLE_KEY, "Project-GT+++ Ores");
+
+            // Экран настроек (ключи: <modid>.configuration.<путь опции>)
+            add("projectgt.configuration.title", "Project-GT+++ Configs");
+            add("projectgt.configuration.section.projectgt.common.toml", "Project-GT+++ Configs");
+            add("projectgt.configuration.section.projectgt.common.toml.title", "Project-GT+++ Configs");
+            add("projectgt.configuration.worldgen", "World Generation");
+            add("projectgt.configuration.enableVanillaOreGeneration", "Enable Vanilla Ore Generation");
             ModItems.byMaterial().forEach(entry -> entry.getValue().forEach((form, item) ->
                     addItem(item, form.displayName(entry.getKey()))));
         }
