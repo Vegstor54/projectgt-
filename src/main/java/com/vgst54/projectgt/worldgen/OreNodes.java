@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.vgst54.projectgt.material.Materials;
 
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 
@@ -134,23 +135,27 @@ public final class OreNodes {
 
     private static final Map<CellKey, Node> CACHE = new ConcurrentHashMap<>();
 
-    public static Node nodeOfCell(long seed, int cellX, int cellZ, boolean nether) {
+    public static Node nodeOfCell(long seed, int cellX, int cellZ, boolean nether, TerrainProbe probe) {
         if (CACHE.size() > 256) CACHE.clear();
-        return CACHE.computeIfAbsent(new CellKey(seed, cellX, cellZ, nether), OreNodes::generate);
+        return CACHE.computeIfAbsent(new CellKey(seed, cellX, cellZ, nether), k -> generate(k, probe));
     }
 
-    public static List<Vein> veinsOfCell(long seed, int cellX, int cellZ, boolean nether) {
-        return nodeOfCell(seed, cellX, cellZ, nether).veins();
+    public static void clearCache() {
+        CACHE.clear();
+    }
+
+    public static List<Vein> veinsOfCell(long seed, int cellX, int cellZ, boolean nether, TerrainProbe probe) {
+        return nodeOfCell(seed, cellX, cellZ, nether, probe).veins();
     }
 
     /** Существующие узлы в ячейках вокруг точки (радиус searchCells ячеек), от ближнего к дальнему. */
-    public static List<Node> nodesNear(long seed, double x, double z, int searchCells, boolean nether) {
+    public static List<Node> nodesNear(long seed, double x, double z, int searchCells, boolean nether, TerrainProbe probe) {
         int cx = Math.floorDiv((int) Math.floor(x), CELL);
         int cz = Math.floorDiv((int) Math.floor(z), CELL);
         List<Node> found = new ArrayList<>();
         for (int dx = -searchCells; dx <= searchCells; dx++) {
             for (int dz = -searchCells; dz <= searchCells; dz++) {
-                Node n = nodeOfCell(seed, cx + dx, cz + dz, nether);
+                Node n = nodeOfCell(seed, cx + dx, cz + dz, nether, probe);
                 if (n.exists()) found.add(n);
             }
         }
@@ -158,7 +163,7 @@ public final class OreNodes {
         return found;
     }
 
-    private static Node generate(CellKey key) {
+    private static Node generate(CellKey key, TerrainProbe probe) {
         long salt = key.nether() ? 0x4E45544845524CL : 0L;
         RandomSource r = new XoroshiroRandomSource(mix(mix(key.seed() ^ key.cellX()) ^ key.cellZ()) ^ salt);
 
@@ -237,9 +242,13 @@ public final class OreNodes {
             }
             double reach = Math.max(a, Math.max(b, c)) + 1;
 
-            // Позиция: несколько попыток найти место, не налезающее на уже стоящие жилы
+            // Позиция: несколько попыток найти место, не налезающее на соседние жилы и не в пустоте
             double vx = 0, vy = 0, vz = 0;
             Type type = null;
+            boolean accepted = false;       // нашли твёрдое место без наложения
+            boolean haveFallback = false;   // нашли хотя бы твёрдое место (с наложением)
+            double fx = 0, fy = 0, fz = 0;
+            Type ftype = null;
             for (int attempt = 0; attempt < PLACE_ATTEMPTS; attempt++) {
                 double t = Math.pow(r.nextDouble(), CENTER_BIAS);   // 0 = центр узла, 1 = край
                 double ang = r.nextDouble() * Math.PI * 2;
@@ -247,7 +256,18 @@ public final class OreNodes {
                 vz = nodeZ + Math.sin(ang) * t * radius;
                 type = fixed != null ? fixed : hydroType(t + (r.nextDouble() - 0.5) * 0.1, r);
                 vy = type.yMin() + r.nextDouble() * (type.yMax() - type.yMin());
-                if (!overlaps(out, vx, vy, vz, reach)) break;
+                // Центр жилы не должен оказаться в воздухе, пещере или жидкости
+                if (!probe.isSolid(Mth.floor(vx), Mth.floor(vy), Mth.floor(vz))) continue;
+                if (!overlaps(out, vx, vy, vz, reach)) {
+                    accepted = true;
+                    break;
+                }
+                fx = vx; fy = vy; fz = vz; ftype = type;
+                haveFallback = true;
+            }
+            if (!accepted) {
+                if (!haveFallback) continue;   // все попытки в пустоте: жилу пропускаем
+                vx = fx; vy = fy; vz = fz; type = ftype;
             }
 
             // Ориентация: простирание theta, падение dip (от горизонтали)
