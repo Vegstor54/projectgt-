@@ -5,6 +5,7 @@ import java.util.List;
 import com.vgst54.projectgt.material.Material;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
@@ -26,6 +27,9 @@ public class OreNodeFeature extends Feature<NoneFeatureConfiguration> {
         WorldGenLevel level = ctx.level();
         ChunkPos cp = new ChunkPos(ctx.origin());
         long seed = level.getSeed();
+        var dimension = level.getLevel().dimension();
+        boolean nether = dimension == Level.NETHER;
+        if (!nether && dimension != Level.OVERWORLD) return false;
 
         int minX = cp.getMinBlockX(), maxX = cp.getMaxBlockX();
         int minZ = cp.getMinBlockZ(), maxZ = cp.getMaxBlockZ();
@@ -39,7 +43,7 @@ public class OreNodeFeature extends Feature<NoneFeatureConfiguration> {
 
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                List<Vein> veins = OreNodes.veinsOfCell(seed, cellX + dx, cellZ + dz);
+                List<Vein> veins = OreNodes.veinsOfCell(seed, cellX + dx, cellZ + dz, nether);
                 for (Vein v : veins) {
                     double reach = v.reach();
                     if (v.cx() + reach < minX || v.cx() - reach > maxX) continue;
@@ -79,8 +83,9 @@ public class OreNodeFeature extends Feature<NoneFeatureConfiguration> {
                     // richness: 1 в центре линзы, 0 на краю
                     double richness = 1.0 - Math.sqrt(d2);
 
-                    // На краях жила рваная, в ядре сплошная
-                    if (OreNodes.hash01(v.seed(), x, y, z) > 0.50 + 0.50 * richness) continue;
+                    // Вкрапления вмещающей породы: плотность растёт от края к ядру, но сплошной не бывает
+                    double density = OreNodes.DENSITY_EDGE + (OreNodes.DENSITY_CORE - OreNodes.DENSITY_EDGE) * richness;
+                    if (OreNodes.hash01(v.seed(), x, y, z) > density) continue;
 
                     pos.set(x, y, z);
                     // Минерал из состава жилы; выбор по кластерам 2x2x2, чтобы получались пятна, а не соль с перцем
