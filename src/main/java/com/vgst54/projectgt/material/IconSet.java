@@ -27,6 +27,11 @@ public enum IconSet {
         this.overrides = overrides;
     }
 
+    /** Накладка с жилами для блоков руды (серая, тонируется цветом материала). */
+    public ResourceLocation oreOverlay() {
+        return ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/ore_overlay/" + folder);
+    }
+
     public ResourceLocation texture(MaterialForm form) {
         String path = overrides.contains(form)
                 ? "item/material/" + folder + "/" + form.suffix()

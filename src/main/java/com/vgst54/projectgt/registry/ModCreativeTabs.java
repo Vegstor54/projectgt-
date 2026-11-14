@@ -38,12 +38,15 @@ public final class ModCreativeTabs {
                     .title(Component.translatable(ORES_TITLE_KEY))
                     .withTabsBefore(CreativeModeTabs.COMBAT)
                     .icon(() -> ModItems.get(Materials.DIAMOND, MaterialForm.RAW_ORE).get().getDefaultInstance())
-                    .displayItems((params, output) -> ModItems.byMaterial().forEach(entry -> {
-                        var item = entry.getValue().get(MaterialForm.RAW_ORE);
-                        if (item != null) {
-                            output.accept(item.get());
-                        }
-                    }))
+                    .displayItems((params, output) -> {
+                        ModItems.byMaterial().forEach(entry -> {
+                            var item = entry.getValue().get(MaterialForm.RAW_ORE);
+                            if (item != null) {
+                                output.accept(item.get());
+                            }
+                        });
+                        ModBlocks.ores().forEach(ore -> output.accept(ore.item().get()));
+                    })
                     .build());
 
     private ModCreativeTabs() {}
