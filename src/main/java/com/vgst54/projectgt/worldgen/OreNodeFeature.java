@@ -29,6 +29,7 @@ public class OreNodeFeature extends Feature<NoneFeatureConfiguration> {
         long seed = level.getSeed();
         var dimension = level.getLevel().dimension();
         boolean nether = dimension == Level.NETHER;
+        TerrainProbe probe = TerrainProbe.of(level.getLevel());
         if (!nether && dimension != Level.OVERWORLD) return false;
 
         int minX = cp.getMinBlockX(), maxX = cp.getMaxBlockX();
@@ -43,7 +44,7 @@ public class OreNodeFeature extends Feature<NoneFeatureConfiguration> {
 
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                List<Vein> veins = OreNodes.veinsOfCell(seed, cellX + dx, cellZ + dz, nether);
+                List<Vein> veins = OreNodes.veinsOfCell(seed, cellX + dx, cellZ + dz, nether, probe);
                 for (Vein v : veins) {
                     double reach = v.reach();
                     if (v.cx() + reach < minX || v.cx() - reach > maxX) continue;

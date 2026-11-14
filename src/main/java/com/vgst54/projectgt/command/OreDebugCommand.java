@@ -7,6 +7,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.worldgen.OreNodes;
+import com.vgst54.projectgt.worldgen.TerrainProbe;
 import com.vgst54.projectgt.worldgen.Vein;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -43,7 +44,7 @@ public final class OreDebugCommand {
     private static int nodes(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack src = ctx.getSource();
         Vec3 p = src.getPosition();
-        List<OreNodes.Node> list = OreNodes.nodesNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS, isNether(src));
+        List<OreNodes.Node> list = OreNodes.nodesNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS, isNether(src), TerrainProbe.of(src.getLevel()));
         if (list.isEmpty()) {
             src.sendSuccess(() -> Component.literal("Рудных узлов рядом нет"), false);
             return 0;
@@ -62,7 +63,7 @@ public final class OreDebugCommand {
     private static int veins(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack src = ctx.getSource();
         Vec3 p = src.getPosition();
-        List<Vein> all = OreNodes.nodesNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS, isNether(src)).stream()
+        List<Vein> all = OreNodes.nodesNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS, isNether(src), TerrainProbe.of(src.getLevel())).stream()
                 .flatMap(n -> n.veins().stream())
                 .sorted(Comparator.comparingDouble(v -> dist3(v, p)))
                 .limit(LIMIT)
