@@ -16,13 +16,34 @@ public final class ModCreativeTabs {
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, ProjectGT.MODID);
 
     public static final String MATERIALS_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".materials";
+    public static final String ORES_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".ores";
 
+    /** Материалы: всё, кроме сырой руды. */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MATERIALS = TABS.register("materials",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable(MATERIALS_TITLE_KEY))
                     .withTabsBefore(CreativeModeTabs.COMBAT)
                     .icon(() -> ModItems.get(Materials.STEEL, MaterialForm.INGOT).get().getDefaultInstance())
-                    .displayItems((params, output) -> ModItems.materialItems().forEach(item -> output.accept(item.get())))
+                    .displayItems((params, output) -> ModItems.byMaterial().forEach(entry ->
+                            entry.getValue().forEach((form, item) -> {
+                                if (form != MaterialForm.RAW_ORE) {
+                                    output.accept(item.get());
+                                }
+                            })))
+                    .build());
+
+    /** Руды: сырая руда (и в будущем блоки руды под каждый камень). */
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ORES = TABS.register("ores",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable(ORES_TITLE_KEY))
+                    .withTabsBefore(CreativeModeTabs.COMBAT)
+                    .icon(() -> ModItems.get(Materials.DIAMOND, MaterialForm.RAW_ORE).get().getDefaultInstance())
+                    .displayItems((params, output) -> ModItems.byMaterial().forEach(entry -> {
+                        var item = entry.getValue().get(MaterialForm.RAW_ORE);
+                        if (item != null) {
+                            output.accept(item.get());
+                        }
+                    }))
                     .build());
 
     private ModCreativeTabs() {}

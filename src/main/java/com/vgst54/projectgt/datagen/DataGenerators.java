@@ -60,6 +60,7 @@ public final class DataGenerators {
         @Override
         protected void addTranslations() {
             add(ModCreativeTabs.MATERIALS_TITLE_KEY, "Project-GT+++ Materials");
+            add(ModCreativeTabs.ORES_TITLE_KEY, "Project-GT+++ Ores");
             ModItems.byMaterial().forEach(entry -> entry.getValue().forEach((form, item) ->
                     addItem(item, form.displayName(entry.getKey()))));
         }
