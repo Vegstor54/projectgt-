@@ -1,0 +1,10 @@
+{
+  "values": [
+    "#c:double_ingots/iron",
+    "#c:double_ingots/copper",
+    "#c:double_ingots/gold",
+    "#c:double_ingots/tin",
+    "#c:double_ingots/bronze",
+    "#c:double_ingots/steel"
+  ]
+}
