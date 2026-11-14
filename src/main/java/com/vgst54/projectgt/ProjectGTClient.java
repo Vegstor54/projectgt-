@@ -1,31 +1,27 @@
 package com.vgst54.projectgt;
 
-import net.minecraft.client.Minecraft;
+import com.vgst54.projectgt.material.Material;
+import com.vgst54.projectgt.registry.ModItems;
+
+import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 
-// This class will not load on dedicated servers. Accessing client side code from here is safe.
+// Клиентская часть мода. Не загружается на dedicated-сервере.
 @Mod(value = ProjectGT.MODID, dist = Dist.CLIENT)
-// You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
 @EventBusSubscriber(modid = ProjectGT.MODID, value = Dist.CLIENT)
 public class ProjectGTClient {
-    public ProjectGTClient(ModContainer container) {
-        // Allows NeoForge to create a config screen for this mod's configs.
-        // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
-        // Do not forget to add translations for your config options to the en_us.json file.
-        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-    }
 
+    // Все предметы материалов используют одну серую текстуру на форму; цвет задаём тонировкой слоя 0.
     @SubscribeEvent
-    static void onClientSetup(FMLClientSetupEvent event) {
-        // Some client setup code
-        ProjectGT.LOGGER.info("HELLO FROM CLIENT SETUP");
-        ProjectGT.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+    static void onItemColors(RegisterColorHandlersEvent.Item event) {
+        ModItems.byMaterial().forEach(entry -> {
+            Material material = entry.getKey();
+            Item[] items = entry.getValue().values().stream().map(h -> h.get()).toArray(Item[]::new);
+            event.register((stack, tintIndex) -> tintIndex == 0 ? material.tint() : -1, items);
+        });
     }
 }
