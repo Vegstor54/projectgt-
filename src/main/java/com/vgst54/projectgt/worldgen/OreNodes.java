@@ -67,20 +67,17 @@ public final class OreNodes {
 
     // ---- Слоистые ----
     private static final List<Type> LAYERED = List.of(
-            // полосчатые железистые кварциты
-            new Type(-40, 24, Mix.of(p(Materials.HEMATITE, 60), p(Materials.MAGNETITE, 25),
-                    p(Materials.SIDERITE, 10), p(Materials.VANADIUM_MAGNETITE, 5))),
-            // окисленное железо у поверхности (железная шляпа), немного золота
-            new Type(8, 64, Mix.of(p(Materials.LIMONITE, 70), p(Materials.HEMATITE, 15),
-                    p(Materials.SIDERITE, 10), p(Materials.NATIVE_GOLD, 5))),
+            // магнетитовые залежи: самородное золото и ванадиевый магнетит
+            new Type(-48, 16, Mix.of(p(Materials.MAGNETITE, 70), p(Materials.NATIVE_GOLD, 20),
+                    p(Materials.VANADIUM_MAGNETITE, 10))),
+            // красный и бурый железняк у поверхности, с малахитом
+            new Type(0, 56, Mix.of(p(Materials.HEMATITE, 50), p(Materials.LIMONITE, 35),
+                    p(Materials.MALACHITE, 15))),
             // ультраосновные породы
             new Type(-48, 0, Mix.of(p(Materials.CHROMITE, 55), p(Materials.PENTLANDITE, 30),
                     p(Materials.VANADIUM_MAGNETITE, 15))),
-            // габбро с титаномагнетитом
-            new Type(-48, 16, Mix.of(p(Materials.MAGNETITE, 55), p(Materials.VANADIUM_MAGNETITE, 30),
-                    p(Materials.CHROMITE, 10), p(Materials.PENTLANDITE, 5))),
             // бокситовая кора выветривания
-            new Type(16, 64, Mix.of(p(Materials.BAUXITE, 75), p(Materials.LIMONITE, 15), p(Materials.HEMATITE, 10))),
+            new Type(16, 64, Mix.of(p(Materials.BAUXITE, 80), p(Materials.LIMONITE, 20))),
             // марганцевые залежи
             new Type(-8, 48, Mix.of(p(Materials.PYROLUSITE, 70), p(Materials.SIDERITE, 15), p(Materials.LIMONITE, 15))));
 
