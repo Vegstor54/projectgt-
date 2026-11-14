@@ -72,9 +72,9 @@ public final class OreDebugCommand {
         }
         src.sendSuccess(() -> Component.literal("Ближайшие жилы:"), false);
         for (Vein v : all) {
-            String line = String.format("  %s | X %d, Y %d, Z %d | до центра %d",
-                    v.material().displayName(), Math.round(v.cx()), Math.round(v.cy()), Math.round(v.cz()),
-                    Math.round(dist3(v, p)));
+            String line = String.format("  X %d, Y %d, Z %d | до центра %d | %s",
+                    Math.round(v.cx()), Math.round(v.cy()), Math.round(v.cz()),
+                    Math.round(dist3(v, p)), v.mix().describe());
             src.sendSuccess(() -> Component.literal(line), false);
         }
         return all.size();

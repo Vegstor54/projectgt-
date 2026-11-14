@@ -1,11 +1,13 @@
 package com.vgst54.projectgt.worldgen;
 
+import static com.vgst54.projectgt.worldgen.Mix.p;
+
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.Materials;
 
 import net.minecraft.util.RandomSource;
@@ -15,12 +17,12 @@ import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
  * Рудные узлы. Мир делится на ячейки CELL x CELL. В ячейке с шансом NODE_CHANCE есть узел одного из видов:
  *
  *  ГИДРОТЕРМАЛЬНЫЙ (гранитный массив, жилы крутые, зональность по расстоянию от центра):
- *    ядро -> касситерит, вольфрамит; дальше медь (халькопирит, малахит у поверхности, пирит);
- *    потом галенит и сфалерит; на краю аргентит, галенит, пирит.
+ *    ядро -> олово и вольфрам; дальше медь (с пиритом и золотом); потом свинец и цинк; на краю серебро.
  *
  *  СЛОИСТЫЙ (осадочные и магматические пласты, залежи пологие, колец нет):
- *    у узла два минерала из набора LAYERED (железняки, хромит, пентландит, боксит, пиролюзит).
+ *    у узла два типа залежи из набора LAYERED (железные руды, хром-никель, ванадиевый магнетит, боксит, марганец).
  *
+ * Каждая жила содержит СМЕСЬ минералов в заданных долях (см. Type), а не один минерал.
  * Всё считается детерминированно от сида мира, поэтому каждый чанк независимо восстанавливает свои жилы.
  */
 public final class OreNodes {
@@ -36,30 +38,45 @@ public final class OreNodes {
     public static final double LAYER_RADIUS_MIN = 90, LAYER_RADIUS_VAR = 70;
     public static final int LAYER_VEINS_MIN = 14, LAYER_VEINS_VAR = 11;
 
+    /** Степень распределения жил по радиусу: 0.5 = равномерно по площади, больше = гуще к центру. */
+    public static final double CENTER_BIAS = 0.6;
+
     /** Границы колец гидротермального узла (доля радиуса). */
     public static final double RING_TIN = 0.25, RING_COPPER = 0.50, RING_LEADZINC = 0.80;
 
-    /** Минерал и диапазон высот, где он образуется. */
-    private record Mineral(Material material, int yMin, int yMax) {}
+    /** Тип жилы: диапазон высот и состав. Доли в процентах (сумма не обязана быть 100). */
+    private record Type(int yMin, int yMax, Mix mix) {}
 
-    private static final Mineral CASSITERITE  = new Mineral(Materials.CASSITERITE, -48, 16);
-    private static final Mineral WOLFRAMITE   = new Mineral(Materials.WOLFRAMITE, -48, 8);
-    private static final Mineral CHALCOPYRITE = new Mineral(Materials.CHALCOPYRITE, -32, 24);
-    private static final Mineral MALACHITE    = new Mineral(Materials.MALACHITE, 16, 56);   // окисленная зона у поверхности
-    private static final Mineral PYRITE       = new Mineral(Materials.PYRITE, -32, 40);
-    private static final Mineral GALENA       = new Mineral(Materials.GALENA, -16, 56);
-    private static final Mineral SPHALERITE   = new Mineral(Materials.SPHALERITE, -16, 56);
-    private static final Mineral ARGENTITE    = new Mineral(Materials.ARGENTITE, -8, 56);
+    // ---- Гидротермальные ----
+    private static final Type CORE = new Type(-48, 16, Mix.of(
+            p(Materials.CASSITERITE, 65), p(Materials.WOLFRAMITE, 25), p(Materials.PYRITE, 10)));
+    private static final Type COPPER_DEEP = new Type(-32, 24, Mix.of(
+            p(Materials.CHALCOPYRITE, 60), p(Materials.PYRITE, 25), p(Materials.NATIVE_GOLD, 10), p(Materials.MALACHITE, 5)));
+    private static final Type COPPER_OXIDIZED = new Type(16, 56, Mix.of(   // окисленная зона у поверхности
+            p(Materials.MALACHITE, 55), p(Materials.CHALCOPYRITE, 30), p(Materials.NATIVE_GOLD, 10), p(Materials.PYRITE, 5)));
+    private static final Type LEAD_ZINC = new Type(-16, 56, Mix.of(
+            p(Materials.GALENA, 45), p(Materials.SPHALERITE, 40), p(Materials.PYRITE, 10), p(Materials.ARGENTITE, 5)));
+    private static final Type SILVER_EDGE = new Type(-8, 56, Mix.of(
+            p(Materials.ARGENTITE, 35), p(Materials.GALENA, 30), p(Materials.PYRITE, 20), p(Materials.NATIVE_GOLD, 15)));
 
-    private static final List<Mineral> LAYERED = List.of(
-            new Mineral(Materials.HEMATITE, -40, 24),
-            new Mineral(Materials.MAGNETITE, -48, 16),
-            new Mineral(Materials.LIMONITE, 8, 64),     // бурый железняк: окисленный, у поверхности
-            new Mineral(Materials.SIDERITE, -16, 40),
-            new Mineral(Materials.CHROMITE, -48, 0),
-            new Mineral(Materials.PENTLANDITE, -48, 0),
-            new Mineral(Materials.BAUXITE, 16, 64),
-            new Mineral(Materials.PYROLUSITE, -8, 48));
+    // ---- Слоистые ----
+    private static final List<Type> LAYERED = List.of(
+            // полосчатые железистые кварциты
+            new Type(-40, 24, Mix.of(p(Materials.HEMATITE, 60), p(Materials.MAGNETITE, 25),
+                    p(Materials.SIDERITE, 10), p(Materials.VANADIUM_MAGNETITE, 5))),
+            // окисленное железо у поверхности (железная шляпа), немного золота
+            new Type(8, 64, Mix.of(p(Materials.LIMONITE, 70), p(Materials.HEMATITE, 15),
+                    p(Materials.SIDERITE, 10), p(Materials.NATIVE_GOLD, 5))),
+            // ультраосновные породы
+            new Type(-48, 0, Mix.of(p(Materials.CHROMITE, 55), p(Materials.PENTLANDITE, 30),
+                    p(Materials.VANADIUM_MAGNETITE, 15))),
+            // габбро с титаномагнетитом
+            new Type(-48, 16, Mix.of(p(Materials.MAGNETITE, 55), p(Materials.VANADIUM_MAGNETITE, 30),
+                    p(Materials.CHROMITE, 10), p(Materials.PENTLANDITE, 5))),
+            // бокситовая кора выветривания
+            new Type(16, 64, Mix.of(p(Materials.BAUXITE, 75), p(Materials.LIMONITE, 15), p(Materials.HEMATITE, 10))),
+            // марганцевые залежи
+            new Type(-8, 48, Mix.of(p(Materials.PYROLUSITE, 70), p(Materials.SIDERITE, 15), p(Materials.LIMONITE, 15))));
 
     private record CellKey(long seed, int cellX, int cellZ) {}
 
@@ -94,7 +111,7 @@ public final class OreNodes {
                 if (n.exists()) found.add(n);
             }
         }
-        found.sort(java.util.Comparator.comparingDouble(n -> Math.hypot(n.x() - x, n.z() - z)));
+        found.sort(Comparator.comparingDouble(n -> Math.hypot(n.x() - x, n.z() - z)));
         return found;
     }
 
@@ -108,14 +125,14 @@ public final class OreNodes {
 
         double radius;
         int count;
-        Mineral layerA = null, layerB = null;
+        Type typeA = null, typeB = null;
         if (layered) {
             radius = LAYER_RADIUS_MIN + r.nextDouble() * LAYER_RADIUS_VAR;
             count = LAYER_VEINS_MIN + r.nextInt(LAYER_VEINS_VAR);
             int i = r.nextInt(LAYERED.size());
             int j = (i + 1 + r.nextInt(LAYERED.size() - 1)) % LAYERED.size();
-            layerA = LAYERED.get(i);
-            layerB = LAYERED.get(j);
+            typeA = LAYERED.get(i);
+            typeB = LAYERED.get(j);
         } else {
             radius = HYDRO_RADIUS_MIN + r.nextDouble() * HYDRO_RADIUS_VAR;
             count = HYDRO_VEINS_MIN + r.nextInt(HYDRO_VEINS_VAR);
@@ -123,29 +140,29 @@ public final class OreNodes {
 
         List<Vein> out = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            double t = Math.pow(r.nextDouble(), 0.8);          // 0 = центр узла, 1 = край
+            double t = Math.pow(r.nextDouble(), CENTER_BIAS);   // 0 = центр узла, 1 = край
             double ang = r.nextDouble() * Math.PI * 2;
             double vx = nodeX + Math.cos(ang) * t * radius;
             double vz = nodeZ + Math.sin(ang) * t * radius;
 
-            Mineral m;
+            Type type;
             double a, b, c, dipDeg;
             if (layered) {
-                m = r.nextBoolean() ? layerA : layerB;
+                type = r.nextBoolean() ? typeA : typeB;
                 // Пологие широкие пласты
                 a = 24 + r.nextDouble() * 26;   // длина 48-100
                 b = 16 + r.nextDouble() * 16;   // ширина 32-64
                 c = 2.5 + r.nextDouble() * 2.0; // толщина 5-9
                 dipDeg = 5 + r.nextDouble() * 25;
             } else {
-                m = hydroMineral(t + (r.nextDouble() - 0.5) * 0.1, r);
+                type = hydroType(t + (r.nextDouble() - 0.5) * 0.1, r);
                 // Крутые жилы
                 a = 18 + r.nextDouble() * 22;   // длина 36-80
                 b = 10 + r.nextDouble() * 12;   // высота 20-44
                 c = 2.5 + r.nextDouble() * 2.0; // толщина 5-9
                 dipDeg = 50 + r.nextDouble() * 35;
             }
-            double vy = m.yMin() + r.nextDouble() * (m.yMax() - m.yMin());
+            double vy = type.yMin() + r.nextDouble() * (type.yMax() - type.yMin());
 
             // Ориентация: простирание theta, падение dip (от горизонтали)
             double theta = r.nextDouble() * Math.PI;
@@ -157,22 +174,21 @@ public final class OreNodes {
                     cs, sn,
                     -sn * cd, -sd, cs * cd,
                     sn * sd, -cd, -cs * sd,
-                    m.material()));
+                    type.mix()));
         }
         return new Node(nodeX, nodeZ, radius, layered, List.copyOf(out));
     }
 
-    /** Минерал гидротермального узла по расстоянию от центра (ring: 0 = центр, 1 = край). */
-    private static Mineral hydroMineral(double ring, RandomSource r) {
-        double p = r.nextDouble();
+    /** Тип жилы гидротермального узла по расстоянию от центра (ring: 0 = центр, 1 = край). */
+    private static Type hydroType(double ring, RandomSource r) {
         if (ring < RING_TIN) {
-            return p < 0.60 ? CASSITERITE : WOLFRAMITE;
+            return CORE;
         } else if (ring < RING_COPPER) {
-            return p < 0.25 ? MALACHITE : p < 0.80 ? CHALCOPYRITE : PYRITE;
+            return r.nextFloat() < 0.30f ? COPPER_OXIDIZED : COPPER_DEEP;
         } else if (ring < RING_LEADZINC) {
-            return p < 0.40 ? GALENA : p < 0.80 ? SPHALERITE : ARGENTITE;
+            return LEAD_ZINC;
         } else {
-            return p < 0.50 ? ARGENTITE : p < 0.75 ? GALENA : PYRITE;
+            return SILVER_EDGE;
         }
     }
 

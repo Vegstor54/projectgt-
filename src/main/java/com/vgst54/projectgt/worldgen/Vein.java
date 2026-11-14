@@ -1,7 +1,5 @@
 package com.vgst54.projectgt.worldgen;
 
-import com.vgst54.projectgt.material.Material;
-
 /**
  * Одна жила: линза (эллипсоид) с тремя полуосями.
  *  a - вдоль простирания, b - вниз по падению, c - толщина (поперёк плоскости).
@@ -14,7 +12,7 @@ public record Vein(
         double ux, double uz,                 // вдоль простирания (горизонтально)
         double wx, double wy, double wz,      // вниз по падению
         double nx, double ny, double nz,      // нормаль к плоскости жилы
-        Material material) {
+        Mix mix) {
 
     /** Радиус сферы, в которую целиком вписывается жила. */
     public double reach() {
