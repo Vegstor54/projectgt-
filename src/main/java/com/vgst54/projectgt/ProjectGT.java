@@ -7,6 +7,7 @@ import com.vgst54.projectgt.registry.ModBiomeModifiers;
 import com.vgst54.projectgt.registry.ModBlocks;
 import com.vgst54.projectgt.registry.ModCreativeTabs;
 import com.vgst54.projectgt.registry.ModItems;
+import com.vgst54.projectgt.worldgen.ModFeatures;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -24,6 +25,7 @@ public class ProjectGT {
         ModItems.ITEMS.register(modEventBus);
         ModCreativeTabs.TABS.register(modEventBus);
         ModBiomeModifiers.SERIALIZERS.register(modEventBus);
+        ModFeatures.FEATURES.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }

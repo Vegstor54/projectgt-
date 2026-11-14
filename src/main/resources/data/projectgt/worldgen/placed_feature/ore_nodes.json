@@ -1,0 +1,8 @@
+{
+  "feature": "projectgt:ore_nodes",
+  "placement": [
+    {
+      "type": "minecraft:biome"
+    }
+  ]
+}
