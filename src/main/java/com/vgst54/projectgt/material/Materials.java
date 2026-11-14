@@ -24,7 +24,7 @@ public final class Materials {
 
     // --- Металлы (руда есть). Ванильные: слитков тут нет, они уже есть в игре. ---
     public static final Material IRON   = add(Material.of("iron",   "Iron",   0xC8C8C8,
-            RAW_ORE, DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
+            RAW_ORE, DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withOreColor(0xD9A98A));
     public static final Material COPPER = add(Material.of("copper", "Copper", 0xE07040,
             RAW_ORE, DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
     public static final Material TIN    = add(Material.of("tin",    "Tin",    0xEEF3F7,

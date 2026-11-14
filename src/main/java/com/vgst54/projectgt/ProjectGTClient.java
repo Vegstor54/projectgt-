@@ -1,10 +1,10 @@
 package com.vgst54.projectgt;
 
 import com.vgst54.projectgt.material.Material;
+import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.registry.ModBlocks;
 import com.vgst54.projectgt.registry.ModItems;
 
-import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -23,28 +23,31 @@ public class ProjectGTClient {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
     }
 
-    // Блоки руды: накладка с жилами (tintindex 0) красится в цвет материала.
+    // Блоки руды: накладка с жилами (tintindex 0) красится в цвет руды материала.
     @SubscribeEvent
     static void onOreBlockColors(RegisterColorHandlersEvent.Block event) {
         ModBlocks.ores().forEach(ore -> event.register(
-                (state, level, pos, tintIndex) -> tintIndex == 0 ? ore.material().tint() : -1,
+                (state, level, pos, tintIndex) -> tintIndex == 0 ? ore.material().oreTint() : -1,
                 ore.block().get()));
     }
 
     @SubscribeEvent
     static void onOreItemColors(RegisterColorHandlersEvent.Item event) {
         ModBlocks.ores().forEach(ore -> event.register(
-                (stack, tintIndex) -> tintIndex == 0 ? ore.material().tint() : -1,
+                (stack, tintIndex) -> tintIndex == 0 ? ore.material().oreTint() : -1,
                 ore.item().get()));
     }
 
     // Все предметы материалов используют одну серую текстуру на форму; цвет задаём тонировкой слоя 0.
+    // Сырая руда красится в цвет руды, остальные формы в цвет металла.
     @SubscribeEvent
     static void onItemColors(RegisterColorHandlersEvent.Item event) {
         ModItems.byMaterial().forEach(entry -> {
             Material material = entry.getKey();
-            Item[] items = entry.getValue().values().stream().map(h -> h.get()).toArray(Item[]::new);
-            event.register((stack, tintIndex) -> tintIndex == 0 ? material.tint() : -1, items);
+            entry.getValue().forEach((form, holder) -> {
+                int tint = form == MaterialForm.RAW_ORE ? material.oreTint() : material.tint();
+                event.register((stack, tintIndex) -> tintIndex == 0 ? tint : -1, holder.get());
+            });
         });
     }
 }
