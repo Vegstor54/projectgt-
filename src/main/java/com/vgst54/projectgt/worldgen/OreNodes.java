@@ -33,7 +33,7 @@ import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 public final class OreNodes {
     // ---- Крутилки баланса ----
     public static final int CELL = 512;
-    public static final float NODE_CHANCE = 0.65f;
+    public static final float NODE_CHANCE = 0.35f;
     /** Доля слоистых узлов среди узлов Верхнего мира. */
     public static final float LAYERED_SHARE = 0.30f;
     /** Шанс узла в ячейке Нижнего мира. */
@@ -56,8 +56,10 @@ public final class OreNodes {
      */
     public static final double DENSITY_EDGE = 0.25, DENSITY_CORE = 0.80;
 
+    /** Какая доля жил получает пятно на поверхности (остальные остаются «слепыми», их находит только бур). */
+    public static final float SURFACE_CHANCE = 0.20f;
     /** Пятно гравия и руды над жилой: не ставим, если жила глубже этого под поверхностью. */
-    public static final int SURFACE_MAX_DEPTH = 128;
+    public static final int SURFACE_MAX_DEPTH = 64;
     /** Радиус пятна = BASE + PER_LENGTH * длина жилы (для жилы 36-80 блоков это около 4-7). */
     public static final double SURFACE_RADIUS_BASE = 2.5, SURFACE_RADIUS_PER_LENGTH = 0.1;
 
@@ -286,7 +288,7 @@ public final class OreNodes {
                     -sn * cd, -sd, cs * cd,
                     sn * sd, -cd, -cs * sd,
                     type.mix(),
-                    kind != Kind.NETHER && fixed != SAPPHIRE));
+                    kind != Kind.NETHER && fixed != SAPPHIRE && r.nextFloat() < SURFACE_CHANCE));
         }
         return new Node(nodeX, nodeZ, radius, kind, List.copyOf(out));
     }
