@@ -8,7 +8,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -38,7 +37,7 @@ public final class ModCreativeTabs {
             () -> CreativeModeTab.builder()
                     .title(Component.translatable(ORES_TITLE_KEY))
                     .withTabsBefore(CreativeModeTabs.COMBAT)
-                    .icon(() -> Items.DIAMOND.getDefaultInstance())
+                    .icon(() -> ModItems.get(Materials.DIAMOND, MaterialForm.RAW_ORE).get().getDefaultInstance())
                     .displayItems((params, output) -> {
                         ModItems.byMaterial().forEach(entry -> {
                             var item = entry.getValue().get(MaterialForm.RAW_ORE);
