@@ -82,6 +82,9 @@ public final class Materials {
     public static final Material SULFUR       = ore("sulfur",       "Sulfur",       0xE6D63A, IconSet.MINERAL);
     public static final Material QUARTZ       = add(Material.of("quartz", "Quartz", 0xE8E0D8, IconSet.CRYSTAL, DUST)
             .withVanillaRaw(() -> Items.QUARTZ));
+    // Уголь: блоки руды дропают ванильный уголь
+    public static final Material COAL         = add(Material.of("coal", "Coal", 0x2B2B2B, IconSet.MINERAL, DUST)
+            .withVanillaRaw(() -> Items.COAL));
 
     private Materials() {}
 
