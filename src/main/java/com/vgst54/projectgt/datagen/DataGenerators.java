@@ -25,6 +25,7 @@ import net.minecraft.data.loot.LootTableProvider;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.data.tags.ItemTagsProvider;
 import net.minecraft.resources.ResourceLocation;
@@ -257,6 +258,23 @@ public final class DataGenerators {
                 addCookingRecipes(output, Ingredient.of(dustTag), dustTag,
                         new ItemStack(out.asItem(), result.count()), "has_" + material.id() + "_dust", name);
             });
+
+            buildAlloyRecipes(output);
+        }
+
+        /**
+         * Сплавы: пыль смешивается крафтом. Бронза: 3 пыли меди и 1 пыль олова дают 4 пыли бронзы
+         * (как в GT). Слиток бронзы получается плавкой пыли в печи (бронза плавится при 950).
+         */
+        private void buildAlloyRecipes(RecipeOutput output) {
+            var copperDust = MaterialForm.DUST.tag(Materials.COPPER);
+            var tinDust = MaterialForm.DUST.tag(Materials.TIN);
+            ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.get(Materials.BRONZE, MaterialForm.DUST).get(), 4)
+                    .requires(Ingredient.of(copperDust), 3)
+                    .requires(Ingredient.of(tinDust))
+                    .unlockedBy("has_copper_dust", has(copperDust))
+                    .unlockedBy("has_tin_dust", has(tinDust))
+                    .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "alloy/bronze_dust"));
         }
     }
 
