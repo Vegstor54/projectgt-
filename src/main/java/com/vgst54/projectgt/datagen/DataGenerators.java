@@ -30,6 +30,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
@@ -160,11 +161,13 @@ public final class DataGenerators {
      * Ванадиевый магнетит тоже не плавится: его надо сначала разделить (для получения ванадия), это будет в продвинутой переработке.
      */
     static final class ModRecipes extends RecipeProvider {
+        private record SmeltingOutput(Supplier<ItemLike> item, int count) {}
+
         ModRecipes(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
             super(output, lookup);
         }
 
-        private static Map<Material, Supplier<ItemLike>> smeltingTable() {
+        private static Map<Material, SmeltingOutput> smeltingTable() {
             Supplier<ItemLike> iron = () -> Items.IRON_INGOT;
             Supplier<ItemLike> copper = () -> Items.COPPER_INGOT;
             Supplier<ItemLike> gold = () -> Items.GOLD_INGOT;
@@ -173,39 +176,40 @@ public final class DataGenerators {
             Supplier<ItemLike> coal = () -> Items.COAL;
             Supplier<ItemLike> graphiteDust = () -> ModItems.get(Materials.GRAPHITE, MaterialForm.DUST).get();
 
-            Map<Material, Supplier<ItemLike>> table = new LinkedHashMap<>();
+            Map<Material, SmeltingOutput> table = new LinkedHashMap<>();
             // Железо
-            table.put(Materials.PYRITE, iron);
-            table.put(Materials.HEMATITE, iron);
-            table.put(Materials.MAGNETITE, iron);
-            table.put(Materials.LIMONITE, iron);
-            table.put(Materials.SIDERITE, iron);
+            table.put(Materials.PYRITE, new SmeltingOutput(iron, 1));
+            table.put(Materials.HEMATITE, new SmeltingOutput(iron, 1));
+            table.put(Materials.MAGNETITE, new SmeltingOutput(iron, 1));
+            table.put(Materials.LIMONITE, new SmeltingOutput(iron, 1));
+            table.put(Materials.SIDERITE, new SmeltingOutput(iron, 1));
             // Медь, олово, золото
-            table.put(Materials.CHALCOPYRITE, copper);
-            table.put(Materials.MALACHITE, copper);
-            table.put(Materials.CASSITERITE, tin);
-            table.put(Materials.TIN, tin);    // сырая оловянная руда самого олова
-            table.put(Materials.NATIVE_GOLD, gold);
+            table.put(Materials.CHALCOPYRITE, new SmeltingOutput(copper, 1));
+            table.put(Materials.MALACHITE, new SmeltingOutput(copper, 1));
+            table.put(Materials.CASSITERITE, new SmeltingOutput(tin, 1));
+            table.put(Materials.TIN, new SmeltingOutput(tin, 1));    // сырая оловянная руда самого олова
+            table.put(Materials.NATIVE_GOLD, new SmeltingOutput(gold, 1));
             // Алмаз, уголь, графит (графит плавится в пыль)
-            table.put(Materials.DIAMOND, diamond);
-            table.put(Materials.COAL, coal);
-            table.put(Materials.GRAPHITE, graphiteDust);
+            table.put(Materials.DIAMOND, new SmeltingOutput(diamond, 1));
+            table.put(Materials.COAL, new SmeltingOutput(coal, 2));
+            table.put(Materials.GRAPHITE, new SmeltingOutput(graphiteDust, 1));
             return table;
         }
 
         @Override
         protected void buildRecipes(RecipeOutput output) {
             smeltingTable().forEach((material, result) -> {
-                ItemLike out = result.get();
+                ItemLike out = result.item().get();
+                ItemStack resultStack = new ItemStack(out.asItem(), result.count());
                 var rawTag = MaterialForm.RAW_ORE.tag(material);
                 Ingredient raw = Ingredient.of(rawTag);
                 String name = material.id() + "_to_" + BuiltInRegistries.ITEM.getKey(out.asItem()).getPath();
                 String trigger = "has_" + material.id() + "_raw_ore";
 
-                SimpleCookingRecipeBuilder.smelting(raw, RecipeCategory.MISC, out, 0.7f, 200)
+                SimpleCookingRecipeBuilder.smelting(raw, RecipeCategory.MISC, resultStack, 0.7f, 200)
                         .unlockedBy(trigger, has(rawTag))
                         .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "smelting/" + name));
-                SimpleCookingRecipeBuilder.blasting(raw, RecipeCategory.MISC, out, 0.7f, 100)
+                SimpleCookingRecipeBuilder.blasting(raw, RecipeCategory.MISC, resultStack, 0.7f, 100)
                         .unlockedBy(trigger, has(rawTag))
                         .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "blasting/" + name));
             });
