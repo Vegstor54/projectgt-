@@ -21,13 +21,12 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
  * Отладка генерации руд (нужны права оператора):
- *   /projectgt nodes - ближайшие рудные узлы (координаты, вид, радиус)
- *   /projectgt veins - ближайшие жилы (минерал и координаты центра)
+ *   /projectgt veins - ближайшие жилы с координатами центра и составом
  */
 @EventBusSubscriber(modid = ProjectGT.MODID)
 public final class OreDebugCommand {
-    private static final int SEARCH_CELLS = 2;  // +-2 ячейки = до ~1200 блоков
-    private static final int LIMIT = 6;
+    private static final int SEARCH_CELLS = 5;  // +-5 ячеек сетки, около 560 блоков
+    private static final int LIMIT = 8;
 
     @SubscribeEvent
     static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -37,33 +36,14 @@ public final class OreDebugCommand {
     private static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("projectgt")
                 .requires(src -> src.hasPermission(2))
-                .then(Commands.literal("nodes").executes(OreDebugCommand::nodes))
                 .then(Commands.literal("veins").executes(OreDebugCommand::veins)));
-    }
-
-    private static int nodes(CommandContext<CommandSourceStack> ctx) {
-        CommandSourceStack src = ctx.getSource();
-        Vec3 p = src.getPosition();
-        List<OreNodes.Node> list = OreNodes.nodesNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS, isNether(src), TerrainProbe.of(src.getLevel()));
-        if (list.isEmpty()) {
-            src.sendSuccess(() -> Component.literal("Рудных узлов рядом нет"), false);
-            return 0;
-        }
-        src.sendSuccess(() -> Component.literal("Ближайшие рудные узлы:"), false);
-        for (OreNodes.Node n : list.stream().limit(LIMIT).toList()) {
-            double dist = Math.hypot(n.x() - p.x, n.z() - p.z);
-            String kind = n.kind().title();
-            String line = String.format("  X %d, Z %d | %s | радиус %d | до центра %d | жил %d",
-                    Math.round(n.x()), Math.round(n.z()), kind, Math.round(n.radius()), Math.round(dist), n.veins().size());
-            src.sendSuccess(() -> Component.literal(line), false);
-        }
-        return list.size();
     }
 
     private static int veins(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack src = ctx.getSource();
         Vec3 p = src.getPosition();
-        List<Vein> all = OreNodes.veinsNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS, isNether(src), TerrainProbe.of(src.getLevel())).stream()
+        boolean nether = src.getLevel().dimension() == Level.NETHER;
+        List<Vein> all = OreNodes.veinsNear(src.getLevel().getSeed(), p.x, p.z, SEARCH_CELLS, nether, TerrainProbe.of(src.getLevel())).stream()
                 .sorted(Comparator.comparingDouble(v -> dist3(v, p)))
                 .limit(LIMIT)
                 .toList();
@@ -79,10 +59,6 @@ public final class OreDebugCommand {
             src.sendSuccess(() -> Component.literal(line), false);
         }
         return all.size();
-    }
-
-    private static boolean isNether(CommandSourceStack src) {
-        return src.getLevel().dimension() == Level.NETHER;
     }
 
     private static double dist3(Vein v, Vec3 p) {
