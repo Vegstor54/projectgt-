@@ -91,6 +91,8 @@ public final class OreNodes {
             new Type(0, 64, new Shape(14, 16, 10, 10, 2.5, 2.0, 5, 25, true), 8, Mix.of(        // угольный пласт: только уголь
                     p(Materials.COAL, 100))),
             // Самоцветы
+            new Type(-60, -16, new Shape(8, 8, 5, 5, 1.5, 1.5, 40, 40, false), 3, Mix.of(   // алмазная жила: графит, алмаз, немного угля
+                    p(Materials.GRAPHITE, 55), p(Materials.DIAMOND, 30), p(Materials.COAL, 15))),
             new Type(-48, 24, new Shape(6, 6, 5, 4, 1.5, 1.0, 30, 55, false), 3, Mix.of(
                     p(Materials.SAPPHIRE, 100))));
 
