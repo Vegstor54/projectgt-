@@ -156,7 +156,7 @@ public final class DataGenerators {
      * Плавка сырой руды в слитки: печь (200 тиков) и плавильная печь (100 тиков).
      * Это простая переплавка для начальных стадий; для высоких стадий будет отдельная продвинутая переработка.
      * Минералы без своего слитка в моде (свинец, цинк, серебро и т.д.) пока не плавятся.
-     * Сюда же входит сырьё алмаза, угля и графита (графит даёт пыль).
+     * Сюда же входит сырьё алмаза и графита (графит даёт пыль). Уголь (2 штуки с сырья) задан вручную в JSON.
      * Ванадиевый магнетит тоже не плавится: его надо сначала разделить (для получения ванадия), это будет в продвинутой переработке.
      */
     static final class ModRecipes extends RecipeProvider {
@@ -170,7 +170,6 @@ public final class DataGenerators {
             Supplier<ItemLike> gold = () -> Items.GOLD_INGOT;
             Supplier<ItemLike> tin = () -> ModItems.get(Materials.TIN, MaterialForm.INGOT).get();
             Supplier<ItemLike> diamond = () -> Items.DIAMOND;
-            Supplier<ItemLike> coal = () -> Items.COAL;
             Supplier<ItemLike> graphiteDust = () -> ModItems.get(Materials.GRAPHITE, MaterialForm.DUST).get();
 
             Map<Material, Supplier<ItemLike>> table = new LinkedHashMap<>();
@@ -186,29 +185,48 @@ public final class DataGenerators {
             table.put(Materials.CASSITERITE, tin);
             table.put(Materials.TIN, tin);    // сырая оловянная руда самого олова
             table.put(Materials.NATIVE_GOLD, gold);
-            // Алмаз, уголь, графит (графит плавится в пыль)
+            // Алмаз и графит (графит плавится в пыль). Сырой уголь даёт 2 угля, см. recipe/smelting/coal_double.json
             table.put(Materials.DIAMOND, diamond);
-            table.put(Materials.COAL, coal);
             table.put(Materials.GRAPHITE, graphiteDust);
+            return table;
+        }
+
+        /**
+         * Пыль плавится в те же слитки, что и сырьё этого минерала, плюс пыль самих металлов и сплавов.
+         * Алмаз и графит не входят: у них результат не слиток.
+         */
+        private static Map<Material, Supplier<ItemLike>> dustTable() {
+            Map<Material, Supplier<ItemLike>> table = new LinkedHashMap<>(smeltingTable());
+            table.remove(Materials.DIAMOND);
+            table.remove(Materials.GRAPHITE);
+            table.put(Materials.IRON, () -> Items.IRON_INGOT);
+            table.put(Materials.COPPER, () -> Items.COPPER_INGOT);
+            table.put(Materials.GOLD, () -> Items.GOLD_INGOT);
+            table.put(Materials.BRONZE, () -> ModItems.get(Materials.BRONZE, MaterialForm.INGOT).get());
+            table.put(Materials.STEEL, () -> ModItems.get(Materials.STEEL, MaterialForm.INGOT).get());
             return table;
         }
 
         @Override
         protected void buildRecipes(RecipeOutput output) {
-            smeltingTable().forEach((material, result) -> {
-                ItemLike out = result.get();
-                var rawTag = MaterialForm.RAW_ORE.tag(material);
-                Ingredient raw = Ingredient.of(rawTag);
-                String name = material.id() + "_to_" + BuiltInRegistries.ITEM.getKey(out.asItem()).getPath();
-                String trigger = "has_" + material.id() + "_raw_ore";
+            smeltingTable().forEach((material, result) -> cook(output, material, MaterialForm.RAW_ORE, result.get()));
+            dustTable().forEach((material, result) -> cook(output, material, MaterialForm.DUST, result.get()));
+        }
 
-                SimpleCookingRecipeBuilder.smelting(raw, RecipeCategory.MISC, out, 0.7f, 200)
-                        .unlockedBy(trigger, has(rawTag))
-                        .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "smelting/" + name));
-                SimpleCookingRecipeBuilder.blasting(raw, RecipeCategory.MISC, out, 0.7f, 100)
-                        .unlockedBy(trigger, has(rawTag))
-                        .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "blasting/" + name));
-            });
+        /** Печь (200 тиков) и плавильная печь (100 тиков): форма материала (сырьё или пыль) в результат. */
+        private void cook(RecipeOutput output, Material material, MaterialForm form, ItemLike out) {
+            var tag = form.tag(material);
+            Ingredient input = Ingredient.of(tag);
+            String from = form == MaterialForm.DUST ? material.id() + "_dust" : material.id();
+            String name = from + "_to_" + BuiltInRegistries.ITEM.getKey(out.asItem()).getPath();
+            String trigger = "has_" + material.id() + "_" + form.suffix();
+
+            SimpleCookingRecipeBuilder.smelting(input, RecipeCategory.MISC, out, 0.7f, 200)
+                    .unlockedBy(trigger, has(tag))
+                    .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "smelting/" + name));
+            SimpleCookingRecipeBuilder.blasting(input, RecipeCategory.MISC, out, 0.7f, 100)
+                    .unlockedBy(trigger, has(tag))
+                    .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "blasting/" + name));
         }
     }
 

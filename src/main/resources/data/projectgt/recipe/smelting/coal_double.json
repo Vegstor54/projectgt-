@@ -1,13 +1,13 @@
 {
-  "type": "minecraft:blasting",
+  "type": "minecraft:smelting",
   "category": "misc",
-  "cookingtime": 100,
+  "cookingtime": 200,
   "experience": 0.7,
   "ingredient": {
     "tag": "c:raw_materials/coal"
   },
   "result": {
-    "count": 1,
+    "count": 2,
     "id": "minecraft:coal"
   }
 }
