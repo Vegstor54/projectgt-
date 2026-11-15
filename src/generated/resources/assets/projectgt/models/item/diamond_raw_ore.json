@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "projectgt:item/material/crystal/raw_ore"
-  }
-}
