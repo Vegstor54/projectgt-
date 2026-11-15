@@ -80,6 +80,9 @@ public final class Materials {
     // Самоцвет Верхнего мира, сера и кварц Незера (кварц дропает ванильный предмет)
     public static final Material SAPPHIRE     = ore("sapphire",     "Sapphire",     0x2F5BD6, IconSet.CRYSTAL);
     public static final Material SULFUR       = ore("sulfur",       "Sulfur",       0xE6D63A, IconSet.MINERAL);
+    // Цеолит и реальгар (спутники халькопирит-касситеритовой жилы)
+    public static final Material ZEOLITE      = ore("zeolite",      "Zeolite",      0xE8E4DC, IconSet.MINERAL);
+    public static final Material REALGAR      = ore("realgar",      "Realgar",      0xD2452B, IconSet.MINERAL);
     public static final Material QUARTZ       = add(Material.of("quartz", "Quartz", 0xE8E0D8, IconSet.CRYSTAL, DUST)
             .withVanillaRaw(() -> Items.QUARTZ));
     // Уголь: блоки руды дропают ванильный уголь
