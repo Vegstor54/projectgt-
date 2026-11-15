@@ -55,6 +55,7 @@ public final class OreNodes {
 
     private static final Shape STEEP = new Shape(18, 22, 10, 12, 2.5, 2.0, 50, 35, true);   // крутые жилы 36-80 в длину
     private static final Shape PLATE = new Shape(14, 16, 10, 10, 2.5, 2.0, 5, 25, true);    // пологие пласты 28-60
+    private static final Shape SMALL = new Shape(8, 8, 5, 5, 1.5, 1.5, 40, 40, true);       // мелкие жилы 16-32
     private static final Shape GEM = new Shape(6, 6, 5, 4, 1.5, 1.0, 30, 55, false);        // самоцветы 12-24
     private static final Shape QUARTZ_SHAPE = new Shape(7, 7, 5, 5, 1.5, 1.5, 20, 65, false);
     private static final Shape SULFUR_SHAPE = new Shape(12, 12, 8, 8, 2, 2, 20, 65, false);
@@ -62,7 +63,7 @@ public final class OreNodes {
     /** Тип жилы: диапазон высот, форма, вес при выборе и состав. Доли минералов в процентах. */
     private record Type(int yMin, int yMax, Shape shape, int weight, Mix mix) {}
 
-    // Мелких жил нет. Минералы не повторяются, кроме халькопирита и касситерита во второй медно-оловянной жиле.
+    // Минералы не повторяются, кроме халькопирита и касситерита во второй медно-оловянной жиле. Мелкая жила одна: реальгар.
     private static final List<Type> OVERWORLD = List.of(
             // Гидротермальные (крутые жилы)
             new Type(-48, 16, STEEP, 10, Mix.of(     // олово и вольфрам
@@ -71,14 +72,16 @@ public final class OreNodes {
                     p(Materials.MAGNETITE, 65), p(Materials.VANADIUM_MAGNETITE, 25), p(Materials.NATIVE_GOLD, 10))),
             new Type(-32, 24, STEEP, 12, Mix.of(     // медная жила: халькопирит и пирит + ванильные медь и железо
                     p(Materials.CHALCOPYRITE, 40), p(Materials.PYRITE, 25), p(Materials.COPPER, 20), p(Materials.IRON, 15))),
-            new Type(-32, 16, STEEP, 8, Mix.of(      // медно-оловянная жила: халькопирит с касситеритом, цеолитом и реальгаром
-                    p(Materials.CHALCOPYRITE, 45), p(Materials.CASSITERITE, 25), p(Materials.ZEOLITE, 15), p(Materials.REALGAR, 15))),
+            new Type(-32, 16, STEEP, 8, Mix.of(      // медно-оловянная жила: халькопирит с касситеритом и цеолитом
+                    p(Materials.CHALCOPYRITE, 50), p(Materials.CASSITERITE, 30), p(Materials.ZEOLITE, 20))),
             new Type(16, 56, STEEP, 5, Mix.of(       // окисленная медь у поверхности
                     p(Materials.MALACHITE, 100))),
             new Type(-16, 56, STEEP, 12, Mix.of(     // свинец и цинк
                     p(Materials.GALENA, 55), p(Materials.SPHALERITE, 45))),
             new Type(-8, 56, STEEP, 6, Mix.of(       // серебро
                     p(Materials.ARGENTITE, 100))),
+            new Type(40, 120, SMALL, 3, Mix.of(      // небольшая неглубокая жила реальгара
+                    p(Materials.REALGAR, 100))),
             // Слоистые (пологие пласты)
             new Type(0, 56, PLATE, 8, Mix.of(        // красный и бурый железняк
                     p(Materials.HEMATITE, 60), p(Materials.LIMONITE, 40))),
