@@ -1,8 +1,11 @@
 package com.vgst54.projectgt.datagen;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.material.Material;
@@ -14,13 +17,22 @@ import com.vgst54.projectgt.registry.ModCreativeTabs;
 import com.vgst54.projectgt.registry.ModItems;
 
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.data.loot.LootTableProvider;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.data.tags.ItemTagsProvider;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -50,6 +62,7 @@ public final class DataGenerators {
 
         var blockTags = generator.addProvider(event.includeServer(), new ModBlockTags(output, lookup, helper));
         generator.addProvider(event.includeServer(), new ModItemTags(output, lookup, blockTags.contentsGetter(), helper));
+        generator.addProvider(event.includeServer(), new ModRecipes(output, lookup));
         generator.addProvider(event.includeServer(), new LootTableProvider(output, Set.of(),
                 List.of(new LootTableProvider.SubProviderEntry(ModBlockLoot::new, LootContextParamSets.BLOCK)),
                 lookup));
@@ -136,6 +149,57 @@ public final class DataGenerators {
             ModItems.byMaterial().forEach(entry -> entry.getValue().forEach((form, item) ->
                     addItem(item, form.displayName(entry.getKey()))));
             ModBlocks.ores().forEach(ore -> addBlock(ore.block(), ore.displayName()));
+        }
+    }
+
+    /**
+     * Плавка сырой руды в слитки: печь (200 тиков) и плавильная печь (100 тиков).
+     * Это простая переплавка для начальных стадий; для высоких стадий будет отдельная продвинутая переработка.
+     * Минералы без своего слитка в моде (свинец, цинк, серебро и т.д.) пока не плавятся.
+     */
+    static final class ModRecipes extends RecipeProvider {
+        ModRecipes(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
+            super(output, lookup);
+        }
+
+        private static Map<Material, Supplier<ItemLike>> smeltingTable() {
+            Supplier<ItemLike> iron = () -> Items.IRON_INGOT;
+            Supplier<ItemLike> copper = () -> Items.COPPER_INGOT;
+            Supplier<ItemLike> gold = () -> Items.GOLD_INGOT;
+            Supplier<ItemLike> tin = () -> ModItems.get(Materials.TIN, MaterialForm.INGOT).get();
+
+            Map<Material, Supplier<ItemLike>> table = new LinkedHashMap<>();
+            // Железо (ванадиевый магнетит пока тоже даёт просто железо)
+            table.put(Materials.PYRITE, iron);
+            table.put(Materials.HEMATITE, iron);
+            table.put(Materials.MAGNETITE, iron);
+            table.put(Materials.LIMONITE, iron);
+            table.put(Materials.SIDERITE, iron);
+            table.put(Materials.VANADIUM_MAGNETITE, iron);
+            // Медь, олово, золото
+            table.put(Materials.CHALCOPYRITE, copper);
+            table.put(Materials.MALACHITE, copper);
+            table.put(Materials.CASSITERITE, tin);
+            table.put(Materials.NATIVE_GOLD, gold);
+            return table;
+        }
+
+        @Override
+        protected void buildRecipes(RecipeOutput output) {
+            smeltingTable().forEach((material, result) -> {
+                ItemLike out = result.get();
+                var rawTag = MaterialForm.RAW_ORE.tag(material);
+                Ingredient raw = Ingredient.of(rawTag);
+                String name = material.id() + "_to_" + BuiltInRegistries.ITEM.getKey(out.asItem()).getPath();
+                String trigger = "has_" + material.id() + "_raw_ore";
+
+                SimpleCookingRecipeBuilder.smelting(raw, RecipeCategory.MISC, out, 0.7f, 200)
+                        .unlockedBy(trigger, has(rawTag))
+                        .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "smelting/" + name));
+                SimpleCookingRecipeBuilder.blasting(raw, RecipeCategory.MISC, out, 0.7f, 100)
+                        .unlockedBy(trigger, has(rawTag))
+                        .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "blasting/" + name));
+            });
         }
     }
 
