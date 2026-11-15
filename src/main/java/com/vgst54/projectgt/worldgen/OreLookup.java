@@ -27,6 +27,12 @@ final class OreLookup {
         return byStone == null ? null : byStone.get(host.getBlock());
     }
 
+    /** Блок руды в обычном камне: им отмечаются пятна на поверхности (null, если у материала нет руды). */
+    static Block surfaceOre(Material material) {
+        Map<Block, Block> byStone = table().get(material.id());
+        return byStone == null ? null : byStone.get(StoneType.STONE.base());
+    }
+
     private static Map<String, Map<Block, Block>> table() {
         Map<String, Map<Block, Block>> t = table;
         if (t == null) {
