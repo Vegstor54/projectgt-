@@ -62,7 +62,7 @@ public final class OreNodes {
     /** Тип жилы: диапазон высот, форма, вес при выборе и состав. Доли минералов в процентах. */
     private record Type(int yMin, int yMax, Shape shape, int weight, Mix mix) {}
 
-    // Каждый минерал встречается только в одной жиле. Мелких жил нет.
+    // Мелких жил нет. Минералы не повторяются, кроме халькопирита и касситерита во второй медно-оловянной жиле.
     private static final List<Type> OVERWORLD = List.of(
             // Гидротермальные (крутые жилы)
             new Type(-48, 16, STEEP, 10, Mix.of(     // олово и вольфрам
@@ -71,6 +71,8 @@ public final class OreNodes {
                     p(Materials.MAGNETITE, 65), p(Materials.VANADIUM_MAGNETITE, 25), p(Materials.NATIVE_GOLD, 10))),
             new Type(-32, 24, STEEP, 12, Mix.of(     // медная жила: халькопирит и пирит + ванильные медь и железо
                     p(Materials.CHALCOPYRITE, 40), p(Materials.PYRITE, 25), p(Materials.COPPER, 20), p(Materials.IRON, 15))),
+            new Type(-32, 16, STEEP, 8, Mix.of(      // медно-оловянная жила: халькопирит с касситеритом, цеолитом и реальгаром
+                    p(Materials.CHALCOPYRITE, 45), p(Materials.CASSITERITE, 25), p(Materials.ZEOLITE, 15), p(Materials.REALGAR, 15))),
             new Type(16, 56, STEEP, 5, Mix.of(       // окисленная медь у поверхности
                     p(Materials.MALACHITE, 100))),
             new Type(-16, 56, STEEP, 12, Mix.of(     // свинец и цинк
