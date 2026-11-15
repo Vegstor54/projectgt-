@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_siderite_ore",
+    "projectgt:deepslate_siderite_ore",
+    "projectgt:granite_siderite_ore",
+    "projectgt:diorite_siderite_ore",
+    "projectgt:andesite_siderite_ore",
+    "projectgt:tuff_siderite_ore",
+    "projectgt:netherrack_siderite_ore",
+    "projectgt:blackstone_siderite_ore",
+    "projectgt:end_stone_siderite_ore"
+  ]
+}

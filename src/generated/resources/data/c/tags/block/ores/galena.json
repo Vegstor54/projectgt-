@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_galena_ore",
+    "projectgt:deepslate_galena_ore",
+    "projectgt:granite_galena_ore",
+    "projectgt:diorite_galena_ore",
+    "projectgt:andesite_galena_ore",
+    "projectgt:tuff_galena_ore",
+    "projectgt:netherrack_galena_ore",
+    "projectgt:blackstone_galena_ore",
+    "projectgt:end_stone_galena_ore"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_chromite_ore",
+    "projectgt:deepslate_chromite_ore",
+    "projectgt:granite_chromite_ore",
+    "projectgt:diorite_chromite_ore",
+    "projectgt:andesite_chromite_ore",
+    "projectgt:tuff_chromite_ore",
+    "projectgt:netherrack_chromite_ore",
+    "projectgt:blackstone_chromite_ore",
+    "projectgt:end_stone_chromite_ore"
+  ]
+}

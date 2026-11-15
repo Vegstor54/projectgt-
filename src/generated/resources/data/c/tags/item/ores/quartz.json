@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_quartz_ore",
+    "projectgt:deepslate_quartz_ore",
+    "projectgt:granite_quartz_ore",
+    "projectgt:diorite_quartz_ore",
+    "projectgt:andesite_quartz_ore",
+    "projectgt:tuff_quartz_ore",
+    "projectgt:netherrack_quartz_ore",
+    "projectgt:blackstone_quartz_ore",
+    "projectgt:end_stone_quartz_ore"
+  ]
+}

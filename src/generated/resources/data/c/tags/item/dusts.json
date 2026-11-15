@@ -6,6 +6,27 @@
     "#c:dusts/gold",
     "#c:dusts/bronze",
     "#c:dusts/steel",
-    "#c:dusts/diamond"
+    "#c:dusts/diamond",
+    "#c:dusts/cassiterite",
+    "#c:dusts/wolframite",
+    "#c:dusts/chalcopyrite",
+    "#c:dusts/malachite",
+    "#c:dusts/pyrite",
+    "#c:dusts/galena",
+    "#c:dusts/sphalerite",
+    "#c:dusts/argentite",
+    "#c:dusts/hematite",
+    "#c:dusts/magnetite",
+    "#c:dusts/limonite",
+    "#c:dusts/siderite",
+    "#c:dusts/pentlandite",
+    "#c:dusts/chromite",
+    "#c:dusts/pyrolusite",
+    "#c:dusts/bauxite",
+    "#c:dusts/native_gold",
+    "#c:dusts/vanadium_magnetite",
+    "#c:dusts/sapphire",
+    "#c:dusts/sulfur",
+    "#c:dusts/quartz"
   ]
 }

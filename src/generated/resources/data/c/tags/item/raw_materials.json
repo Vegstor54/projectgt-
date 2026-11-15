@@ -2,6 +2,26 @@
   "values": [
     "#c:raw_materials/tin",
     "#c:raw_materials/diamond",
-    "#c:raw_materials/redstone"
+    "#c:raw_materials/redstone",
+    "#c:raw_materials/cassiterite",
+    "#c:raw_materials/wolframite",
+    "#c:raw_materials/chalcopyrite",
+    "#c:raw_materials/malachite",
+    "#c:raw_materials/pyrite",
+    "#c:raw_materials/galena",
+    "#c:raw_materials/sphalerite",
+    "#c:raw_materials/argentite",
+    "#c:raw_materials/hematite",
+    "#c:raw_materials/magnetite",
+    "#c:raw_materials/limonite",
+    "#c:raw_materials/siderite",
+    "#c:raw_materials/pentlandite",
+    "#c:raw_materials/chromite",
+    "#c:raw_materials/pyrolusite",
+    "#c:raw_materials/bauxite",
+    "#c:raw_materials/native_gold",
+    "#c:raw_materials/vanadium_magnetite",
+    "#c:raw_materials/sapphire",
+    "#c:raw_materials/sulfur"
   ]
 }

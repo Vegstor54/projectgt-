@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_bauxite_ore",
+    "projectgt:deepslate_bauxite_ore",
+    "projectgt:granite_bauxite_ore",
+    "projectgt:diorite_bauxite_ore",
+    "projectgt:andesite_bauxite_ore",
+    "projectgt:tuff_bauxite_ore",
+    "projectgt:netherrack_bauxite_ore",
+    "projectgt:blackstone_bauxite_ore",
+    "projectgt:end_stone_bauxite_ore"
+  ]
+}

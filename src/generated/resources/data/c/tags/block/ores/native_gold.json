@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_native_gold_ore",
+    "projectgt:deepslate_native_gold_ore",
+    "projectgt:granite_native_gold_ore",
+    "projectgt:diorite_native_gold_ore",
+    "projectgt:andesite_native_gold_ore",
+    "projectgt:tuff_native_gold_ore",
+    "projectgt:netherrack_native_gold_ore",
+    "projectgt:blackstone_native_gold_ore",
+    "projectgt:end_stone_native_gold_ore"
+  ]
+}

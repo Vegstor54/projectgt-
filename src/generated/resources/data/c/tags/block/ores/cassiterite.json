@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_cassiterite_ore",
+    "projectgt:deepslate_cassiterite_ore",
+    "projectgt:granite_cassiterite_ore",
+    "projectgt:diorite_cassiterite_ore",
+    "projectgt:andesite_cassiterite_ore",
+    "projectgt:tuff_cassiterite_ore",
+    "projectgt:netherrack_cassiterite_ore",
+    "projectgt:blackstone_cassiterite_ore",
+    "projectgt:end_stone_cassiterite_ore"
+  ]
+}

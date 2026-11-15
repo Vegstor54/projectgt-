@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_hematite_ore",
+    "projectgt:deepslate_hematite_ore",
+    "projectgt:granite_hematite_ore",
+    "projectgt:diorite_hematite_ore",
+    "projectgt:andesite_hematite_ore",
+    "projectgt:tuff_hematite_ore",
+    "projectgt:netherrack_hematite_ore",
+    "projectgt:blackstone_hematite_ore",
+    "projectgt:end_stone_hematite_ore"
+  ]
+}

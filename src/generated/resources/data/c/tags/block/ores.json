@@ -4,6 +4,27 @@
     "#c:ores/copper",
     "#c:ores/tin",
     "#c:ores/diamond",
-    "#c:ores/redstone"
+    "#c:ores/redstone",
+    "#c:ores/cassiterite",
+    "#c:ores/wolframite",
+    "#c:ores/chalcopyrite",
+    "#c:ores/malachite",
+    "#c:ores/pyrite",
+    "#c:ores/galena",
+    "#c:ores/sphalerite",
+    "#c:ores/argentite",
+    "#c:ores/hematite",
+    "#c:ores/magnetite",
+    "#c:ores/limonite",
+    "#c:ores/siderite",
+    "#c:ores/pentlandite",
+    "#c:ores/chromite",
+    "#c:ores/pyrolusite",
+    "#c:ores/bauxite",
+    "#c:ores/native_gold",
+    "#c:ores/vanadium_magnetite",
+    "#c:ores/sapphire",
+    "#c:ores/sulfur",
+    "#c:ores/quartz"
   ]
 }

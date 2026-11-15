@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_magnetite_ore",
+    "projectgt:deepslate_magnetite_ore",
+    "projectgt:granite_magnetite_ore",
+    "projectgt:diorite_magnetite_ore",
+    "projectgt:andesite_magnetite_ore",
+    "projectgt:tuff_magnetite_ore",
+    "projectgt:netherrack_magnetite_ore",
+    "projectgt:blackstone_magnetite_ore",
+    "projectgt:end_stone_magnetite_ore"
+  ]
+}
