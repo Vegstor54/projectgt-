@@ -176,6 +176,7 @@ public final class DataGenerators {
             Supplier<ItemLike> zinc = () -> ModItems.get(Materials.ZINC, MaterialForm.INGOT).get();
             Supplier<ItemLike> diamond = () -> Items.DIAMOND;
             Supplier<ItemLike> coal = () -> Items.COAL;
+            Supplier<ItemLike> redstone = () -> Items.REDSTONE;
             Supplier<ItemLike> graphiteDust = () -> ModItems.get(Materials.GRAPHITE, MaterialForm.DUST).get();
 
             Map<Material, SmeltingOutput> table = new LinkedHashMap<>();
@@ -198,6 +199,8 @@ public final class DataGenerators {
             table.put(Materials.DIAMOND, new SmeltingOutput(diamond, 1));
             table.put(Materials.COAL, new SmeltingOutput(coal, 2));
             table.put(Materials.GRAPHITE, new SmeltingOutput(graphiteDust, 1));
+            // Сырой редстоун даёт 5 ванильной красной пыли
+            table.put(Materials.REDSTONE, new SmeltingOutput(redstone, 5));
             return table;
         }
 
@@ -205,6 +208,7 @@ public final class DataGenerators {
             Map<Material, SmeltingOutput> table = new LinkedHashMap<>(smeltingTable());
             table.remove(Materials.COAL);
             table.remove(Materials.GRAPHITE);
+            table.remove(Materials.REDSTONE);   // у редстоуна нет своей пыли, результат и так пыль
             table.put(Materials.IRON, new SmeltingOutput(() -> Items.IRON_INGOT, 1));
             table.put(Materials.COPPER, new SmeltingOutput(() -> Items.COPPER_INGOT, 1));
             table.put(Materials.GOLD, new SmeltingOutput(() -> Items.GOLD_INGOT, 1));
