@@ -3,7 +3,6 @@ package com.vgst54.projectgt.worldgen;
 import static com.vgst54.projectgt.worldgen.Mix.p;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,40 +14,27 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.XoroshiroRandomSource;
 
 /**
- * Рудные узлы. Мир делится на ячейки CELL x CELL. В ячейке с шансом NODE_CHANCE есть узел одного из видов:
+ * Генерация жил по сетке, как в GregTech. Мир делится на ячейки GRID_CHUNKS x GRID_CHUNKS чанков (7 x 7 = 112 блоков).
+ * В каждой ячейке одна жила: центр ячейки плюс случайный сдвиг до +-JITTER блоков по X и Z, тип по весам.
+ * Ячейка кратна чанку, поэтому чанк целиком лежит в одной ячейке, а до жил соседних ячеек хватает 3 x 3.
  *
- *  ГИДРОТЕРМАЛЬНЫЙ (гранитный массив, жилы крутые, зональность по расстоянию от центра):
- *    ядро -> олово и вольфрам; дальше медь (с пиритом и золотом); потом свинец и цинк; на краю серебро.
+ * (Класс называется OreNodes по старой схеме с узлами; узлов больше нет.)
  *
- *  СЛОИСТЫЙ (осадочные и магматические пласты, залежи пологие, колец нет):
- *    узел целиком одного типа из набора LAYERED (магнетит с золотом, гематит с лимонитом, хром-никель, боксит, марганец).
- *
- *  НИЖНИЙ МИР (Незер): небольшие жилы кварца и серы со сфалеритом.
- *
- * Кроме того, в любом узле Верхнего мира изредка попадаются мелкие «акцентные» жилы сапфира.
- * Каждая жила содержит СМЕСЬ минералов в заданных долях (см. Type), не больше 4 минералов в одном типе.
- * Жилы стараются не налезать друг на друга (MIN_SEPARATION).
+ * Каждая жила содержит смесь минералов в заданных долях (см. Type), не больше 4 минералов в одном типе.
  * Всё считается детерминированно от сида мира, поэтому каждый чанк независимо восстанавливает свои жилы.
  */
 public final class OreNodes {
     // ---- Крутилки баланса ----
-    public static final int CELL = 512;
-    public static final float NODE_CHANCE = 0.35f;
-    /** Доля слоистых узлов среди узлов Верхнего мира. */
-    public static final float LAYERED_SHARE = 0.30f;
-    /** Шанс узла в ячейке Нижнего мира. */
-    public static final float NETHER_NODE_CHANCE = 0.80f;
-    /** Шанс того, что очередная жила Верхнего мира окажется мелкой жилой сапфира. */
-    public static final float ACCENT_CHANCE = 0.06f;
-
-    public static final double HYDRO_RADIUS_MIN = 110, HYDRO_RADIUS_VAR = 90;
-    public static final int HYDRO_VEINS_MIN = 40, HYDRO_VEINS_VAR = 26;
-
-    public static final double LAYER_RADIUS_MIN = 90, LAYER_RADIUS_VAR = 70;
-    public static final int LAYER_VEINS_MIN = 14, LAYER_VEINS_VAR = 11;
-
-    public static final double NETHER_RADIUS_MIN = 80, NETHER_RADIUS_VAR = 50;
-    public static final int NETHER_VEINS_MIN = 24, NETHER_VEINS_VAR = 13;
+    /** Размер ячейки сетки в чанках. */
+    public static final int GRID_CHUNKS = 7;
+    public static final int CELL = GRID_CHUNKS * 16;
+    /** Максимальный сдвиг центра жилы от центра ячейки по X и по Z (блоков, в любую сторону). */
+    public static final double JITTER = 20;
+    /** Шанс жилы в ячейке Верхнего мира и Незера. */
+    public static final float CELL_CHANCE = 1.0f;
+    public static final float NETHER_CELL_CHANCE = 0.6f;
+    /** Попыток найти для центра жилы твёрдое место (не воздух, не пещера, не жидкость); потом ячейка остаётся пустой. */
+    public static final int PLACE_ATTEMPTS = 8;
 
     /**
      * Плотность руды внутри жилы: на краю линзы EDGE, в самом центре CORE (доля блоков руды).
@@ -56,116 +42,70 @@ public final class OreNodes {
      */
     public static final double DENSITY_EDGE = 0.25, DENSITY_CORE = 0.80;
 
-    /** Какая доля жил получает пятно на поверхности (остальные остаются «слепыми», их находит только бур). */
-    public static final float SURFACE_CHANCE = 1.0f;
-    /** Пятно гравия и руды над жилой: не ставим, если жила глубже этого под поверхностью. */
+    /** Какая доля жил получает пятно гравия и руды на поверхности. */
+    public static final float SURFACE_CHANCE = 0.40f;
+    /** Пятно не ставим, если жила глубже этого под поверхностью. */
     public static final int SURFACE_MAX_DEPTH = 128;
-    /** Минимальное расстояние между пятнами одного узла (по горизонтали), чтобы руда не лежала кучей. */
-    public static final double SURFACE_MIN_SPACING = 48;
-    /** Радиус пятна = BASE + PER_LENGTH * длина жилы (для жилы 36-80 блоков это около 4-7). */
+    /** Радиус пятна = BASE + PER_LENGTH * длина жилы. */
     public static final double SURFACE_RADIUS_BASE = 2.5, SURFACE_RADIUS_PER_LENGTH = 0.1;
 
-    /** Фоновые мелкие жилы вне узлов: по SCATTER_MIN..SCATTER_MIN+VAR-1 на ячейку, чтобы нигде не было совсем пусто. */
-    public static final int SCATTER_MIN = 5, SCATTER_VAR = 6;
-    /** Доля фоновых жил, у которых есть пятно на поверхности. */
-    public static final float SCATTER_SURFACE_CHANCE = 0.5f;
+    /** Форма жилы: полуоси линзы и угол падения как «минимум + случайная добавка», в блоках и градусах. */
+    private record Shape(double a, double aVar, double b, double bVar, double c, double cVar,
+                         double dip, double dipVar, boolean surface) {}
 
-    /** Попыток найти место жиле, не налезающее на соседние; после неудач ставим как есть. */
-    public static final int PLACE_ATTEMPTS = 16;
-    /** Минимальное расстояние между центрами жил как доля суммы их радиусов. */
-    public static final double MIN_SEPARATION = 0.7;
+    private static final Shape STEEP = new Shape(18, 22, 10, 12, 2.5, 2.0, 50, 35, true);   // крутые жилы 36-80 в длину
+    private static final Shape PLATE = new Shape(14, 16, 10, 10, 2.5, 2.0, 5, 25, true);    // пологие пласты 28-60
+    private static final Shape SMALL = new Shape(8, 8, 5, 5, 1.5, 1.5, 40, 40, true);       // мелкие жилы 16-32
+    private static final Shape GEM = new Shape(6, 6, 5, 4, 1.5, 1.0, 30, 55, false);        // самоцветы 12-24
+    private static final Shape QUARTZ_SHAPE = new Shape(7, 7, 5, 5, 1.5, 1.5, 20, 65, false);
+    private static final Shape SULFUR_SHAPE = new Shape(12, 12, 8, 8, 2, 2, 20, 65, false);
 
-    /** Степень распределения жил по радиусу: 0.5 = равномерно по площади, больше = гуще к центру. */
-    public static final double CENTER_BIAS = 0.6;
+    /** Тип жилы: диапазон высот, форма, вес при выборе и состав. Доли минералов в процентах. */
+    private record Type(int yMin, int yMax, Shape shape, int weight, Mix mix) {}
 
-    /** Границы колец гидротермального узла (доля радиуса). */
-    public static final double RING_TIN = 0.25, RING_COPPER = 0.50, RING_LEADZINC = 0.80;
+    private static final List<Type> OVERWORLD = List.of(
+            // Гидротермальные (крутые жилы)
+            new Type(-48, 16, STEEP, 10, Mix.of(
+                    p(Materials.CASSITERITE, 65), p(Materials.WOLFRAMITE, 25), p(Materials.PYRITE, 10))),
+            new Type(-32, 24, STEEP, 12, Mix.of(
+                    p(Materials.CHALCOPYRITE, 60), p(Materials.PYRITE, 25), p(Materials.NATIVE_GOLD, 10), p(Materials.MALACHITE, 5))),
+            new Type(16, 56, STEEP, 5, Mix.of(      // окисленная медь у поверхности
+                    p(Materials.MALACHITE, 55), p(Materials.CHALCOPYRITE, 30), p(Materials.NATIVE_GOLD, 10), p(Materials.PYRITE, 5))),
+            new Type(-16, 56, STEEP, 12, Mix.of(
+                    p(Materials.GALENA, 45), p(Materials.SPHALERITE, 40), p(Materials.PYRITE, 10), p(Materials.ARGENTITE, 5))),
+            new Type(-8, 56, STEEP, 6, Mix.of(
+                    p(Materials.ARGENTITE, 35), p(Materials.GALENA, 30), p(Materials.PYRITE, 20), p(Materials.NATIVE_GOLD, 15))),
+            // Слоистые (пологие пласты)
+            new Type(-48, 16, PLATE, 8, Mix.of(     // магнетит с золотом и ванадиевым магнетитом
+                    p(Materials.MAGNETITE, 70), p(Materials.NATIVE_GOLD, 20), p(Materials.VANADIUM_MAGNETITE, 10))),
+            new Type(0, 56, PLATE, 8, Mix.of(       // красный и бурый железняк с малахитом
+                    p(Materials.HEMATITE, 50), p(Materials.LIMONITE, 35), p(Materials.MALACHITE, 15))),
+            new Type(-48, 0, PLATE, 4, Mix.of(
+                    p(Materials.CHROMITE, 55), p(Materials.PENTLANDITE, 30), p(Materials.VANADIUM_MAGNETITE, 15))),
+            new Type(16, 64, PLATE, 5, Mix.of(
+                    p(Materials.BAUXITE, 80), p(Materials.LIMONITE, 20))),
+            new Type(-8, 48, PLATE, 4, Mix.of(
+                    p(Materials.PYROLUSITE, 70), p(Materials.SIDERITE, 15), p(Materials.LIMONITE, 15))),
+            // Мелкие жилы одного-двух минералов
+            new Type(-24, 40, SMALL, 3, Mix.of(p(Materials.CASSITERITE, 80), p(Materials.PYRITE, 20))),
+            new Type(-16, 48, SMALL, 3, Mix.of(p(Materials.CHALCOPYRITE, 60), p(Materials.MALACHITE, 30), p(Materials.PYRITE, 10))),
+            new Type(0, 56, SMALL, 3, Mix.of(p(Materials.LIMONITE, 60), p(Materials.HEMATITE, 40))),
+            new Type(-16, 40, SMALL, 3, Mix.of(p(Materials.GALENA, 50), p(Materials.SPHALERITE, 50))),
+            new Type(-32, 16, SMALL, 3, Mix.of(p(Materials.MAGNETITE, 80), p(Materials.VANADIUM_MAGNETITE, 20))),
+            // Самоцветы
+            new Type(-48, 24, GEM, 3, Mix.of(p(Materials.SAPPHIRE, 75), p(Materials.BAUXITE, 25))));
 
-    /** Вид узла. */
-    public enum Kind {
-        HYDROTHERMAL("гидротермальный"), LAYERED("слоистый"), NETHER("незер");
-
-        private final String title;
-
-        Kind(String title) {
-            this.title = title;
-        }
-
-        public String title() {
-            return title;
-        }
-    }
-
-    /** Тип жилы: диапазон высот и состав. Доли в процентах (сумма не обязана быть 100). */
-    private record Type(int yMin, int yMax, Mix mix) {}
-
-    // ---- Гидротермальные ----
-    private static final Type CORE = new Type(-48, 16, Mix.of(
-            p(Materials.CASSITERITE, 65), p(Materials.WOLFRAMITE, 25), p(Materials.PYRITE, 10)));
-    private static final Type COPPER_DEEP = new Type(-32, 24, Mix.of(
-            p(Materials.CHALCOPYRITE, 60), p(Materials.PYRITE, 25), p(Materials.NATIVE_GOLD, 10), p(Materials.MALACHITE, 5)));
-    private static final Type COPPER_OXIDIZED = new Type(16, 56, Mix.of(   // окисленная зона у поверхности
-            p(Materials.MALACHITE, 55), p(Materials.CHALCOPYRITE, 30), p(Materials.NATIVE_GOLD, 10), p(Materials.PYRITE, 5)));
-    private static final Type LEAD_ZINC = new Type(-16, 56, Mix.of(
-            p(Materials.GALENA, 45), p(Materials.SPHALERITE, 40), p(Materials.PYRITE, 10), p(Materials.ARGENTITE, 5)));
-    private static final Type SILVER_EDGE = new Type(-8, 56, Mix.of(
-            p(Materials.ARGENTITE, 35), p(Materials.GALENA, 30), p(Materials.PYRITE, 20), p(Materials.NATIVE_GOLD, 15)));
-
-    // ---- Слоистые ----
-    private static final List<Type> LAYERED = List.of(
-            // магнетитовые залежи: самородное золото и ванадиевый магнетит
-            new Type(-48, 16, Mix.of(p(Materials.MAGNETITE, 70), p(Materials.NATIVE_GOLD, 20),
-                    p(Materials.VANADIUM_MAGNETITE, 10))),
-            // красный и бурый железняк у поверхности, с малахитом
-            new Type(0, 56, Mix.of(p(Materials.HEMATITE, 50), p(Materials.LIMONITE, 35),
-                    p(Materials.MALACHITE, 15))),
-            // ультраосновные породы
-            new Type(-48, 0, Mix.of(p(Materials.CHROMITE, 55), p(Materials.PENTLANDITE, 30),
-                    p(Materials.VANADIUM_MAGNETITE, 15))),
-            // бокситовая кора выветривания
-            new Type(16, 64, Mix.of(p(Materials.BAUXITE, 80), p(Materials.LIMONITE, 20))),
-            // марганцевые залежи
-            new Type(-8, 48, Mix.of(p(Materials.PYROLUSITE, 70), p(Materials.SIDERITE, 15), p(Materials.LIMONITE, 15))));
-
-    // ---- Фоновые мелкие жилы (вне узлов) ----
-    private static final List<Type> SCATTER = List.of(
-            new Type(-24, 40, Mix.of(p(Materials.CASSITERITE, 80), p(Materials.PYRITE, 20))),
-            new Type(-16, 48, Mix.of(p(Materials.CHALCOPYRITE, 60), p(Materials.MALACHITE, 30), p(Materials.PYRITE, 10))),
-            new Type(0, 56, Mix.of(p(Materials.LIMONITE, 60), p(Materials.HEMATITE, 40))),
-            new Type(-16, 40, Mix.of(p(Materials.GALENA, 50), p(Materials.SPHALERITE, 50))),
-            new Type(-32, 16, Mix.of(p(Materials.MAGNETITE, 80), p(Materials.VANADIUM_MAGNETITE, 20))));
-
-    // ---- Акцентная жила Верхнего мира ----
-    private static final Type SAPPHIRE = new Type(-48, 24, Mix.of(
-            p(Materials.SAPPHIRE, 75), p(Materials.BAUXITE, 25)));
-
-    // ---- Нижний мир ----
-    private static final Type QUARTZ_VEIN = new Type(10, 110, Mix.of(p(Materials.QUARTZ, 100)));
-    private static final Type SULFUR_VEIN = new Type(10, 110, Mix.of(
-            p(Materials.SULFUR, 70), p(Materials.SPHALERITE, 30)));
+    private static final List<Type> NETHER = List.of(
+            new Type(10, 110, QUARTZ_SHAPE, 1, Mix.of(p(Materials.QUARTZ, 100))),
+            new Type(10, 110, SULFUR_SHAPE, 1, Mix.of(p(Materials.SULFUR, 70), p(Materials.SPHALERITE, 30))));
 
     private record CellKey(long seed, int cellX, int cellZ, boolean nether) {}
 
-    /** Рудный узел: центр, радиус, вид и все его жилы. NONE = в ячейке узла нет. */
-    public record Node(double x, double z, double radius, Kind kind, List<Vein> veins, List<Vein> scatter) {
-        public boolean exists() {
-            return radius > 0;
-        }
+    private static final Map<CellKey, List<Vein>> CACHE = new ConcurrentHashMap<>();
 
-        /** Жилы узла и фоновые жилы ячейки. */
-        public List<Vein> allVeins() {
-            if (scatter.isEmpty()) return veins;
-            List<Vein> all = new ArrayList<>(veins.size() + scatter.size());
-            all.addAll(veins);
-            all.addAll(scatter);
-            return all;
-        }
-    }
-
-    private static final Map<CellKey, Node> CACHE = new ConcurrentHashMap<>();
-
-    public static Node nodeOfCell(long seed, int cellX, int cellZ, boolean nether, TerrainProbe probe) {
-        if (CACHE.size() > 256) CACHE.clear();
+    /** Жилы ячейки сетки (ноль или одна). */
+    public static List<Vein> veinsOfCell(long seed, int cellX, int cellZ, boolean nether, TerrainProbe probe) {
+        if (CACHE.size() > 4096) CACHE.clear();
         return CACHE.computeIfAbsent(new CellKey(seed, cellX, cellZ, nether), k -> generate(k, probe));
     }
 
@@ -173,241 +113,68 @@ public final class OreNodes {
         CACHE.clear();
     }
 
-    public static List<Vein> veinsOfCell(long seed, int cellX, int cellZ, boolean nether, TerrainProbe probe) {
-        return nodeOfCell(seed, cellX, cellZ, nether, probe).allVeins();
-    }
-
-    /** Существующие узлы в ячейках вокруг точки (радиус searchCells ячеек), от ближнего к дальнему. */
-    public static List<Node> nodesNear(long seed, double x, double z, int searchCells, boolean nether, TerrainProbe probe) {
-        int cx = Math.floorDiv((int) Math.floor(x), CELL);
-        int cz = Math.floorDiv((int) Math.floor(z), CELL);
-        List<Node> found = new ArrayList<>();
-        for (int dx = -searchCells; dx <= searchCells; dx++) {
-            for (int dz = -searchCells; dz <= searchCells; dz++) {
-                Node n = nodeOfCell(seed, cx + dx, cz + dz, nether, probe);
-                if (n.exists()) found.add(n);
-            }
-        }
-        found.sort(Comparator.comparingDouble(n -> Math.hypot(n.x() - x, n.z() - z)));
-        return found;
-    }
-
-    /** Все жилы (узлов и фоновые) в ячейках вокруг точки. */
+    /** Все жилы в ячейках вокруг точки (radius ячеек в каждую сторону). */
     public static List<Vein> veinsNear(long seed, double x, double z, int searchCells, boolean nether, TerrainProbe probe) {
         int cx = Math.floorDiv((int) Math.floor(x), CELL);
         int cz = Math.floorDiv((int) Math.floor(z), CELL);
         List<Vein> found = new ArrayList<>();
         for (int dx = -searchCells; dx <= searchCells; dx++) {
             for (int dz = -searchCells; dz <= searchCells; dz++) {
-                found.addAll(nodeOfCell(seed, cx + dx, cz + dz, nether, probe).allVeins());
+                found.addAll(veinsOfCell(seed, cx + dx, cz + dz, nether, probe));
             }
         }
         return found;
     }
 
-    /** Мелкие жилы одного минерала по всей ячейке, независимо от узла. */
-    private static List<Vein> scatterVeins(CellKey key, TerrainProbe probe) {
-        RandomSource r = new XoroshiroRandomSource(mix(mix(key.seed() ^ 0x5CA77E4L ^ key.cellX()) ^ key.cellZ()));
-        int count = SCATTER_MIN + r.nextInt(SCATTER_VAR);
-        List<Vein> out = new ArrayList<>(count);
-        List<double[]> patches = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            Type type = SCATTER.get(r.nextInt(SCATTER.size()));
-            double a = 8 + r.nextDouble() * 8;       // длина 16-32
-            double b = 5 + r.nextDouble() * 5;
-            double c = 1.5 + r.nextDouble() * 1.5;   // толщина 3-6
-            double reach = Math.max(a, Math.max(b, c)) + 1;
-
-            double vx = 0, vy = 0, vz = 0;
-            boolean ok = false;
-            for (int attempt = 0; attempt < 8 && !ok; attempt++) {
-                vx = key.cellX() * (double) CELL + r.nextDouble() * CELL;
-                vz = key.cellZ() * (double) CELL + r.nextDouble() * CELL;
-                vy = type.yMin() + r.nextDouble() * (type.yMax() - type.yMin());
-                ok = probe.isSolid(Mth.floor(vx), Mth.floor(vy), Mth.floor(vz)) && !overlaps(out, vx, vy, vz, reach);
-            }
-            if (!ok) continue;
-
-            boolean mark = r.nextFloat() < SCATTER_SURFACE_CHANCE;
-            if (mark) {
-                for (double[] q : patches) {
-                    if (Math.hypot(q[0] - vx, q[1] - vz) < SURFACE_MIN_SPACING) {
-                        mark = false;
-                        break;
-                    }
-                }
-            }
-            if (mark) patches.add(new double[] {vx, vz});
-
-            double theta = r.nextDouble() * Math.PI;
-            double dip = Math.toRadians(40 + r.nextDouble() * 40);
-            double cs = Math.cos(theta), sn = Math.sin(theta);
-            double cd = Math.cos(dip), sd = Math.sin(dip);
-            out.add(new Vein(r.nextLong(), vx, vy, vz, a, b, c,
-                    cs, sn,
-                    -sn * cd, -sd, cs * cd,
-                    sn * sd, -cd, -cs * sd,
-                    type.mix(), mark));
-        }
-        return List.copyOf(out);
-    }
-
-    private static Node generate(CellKey key, TerrainProbe probe) {
-        long salt = key.nether() ? 0x4E45544845524CL : 0L;
+    private static List<Vein> generate(CellKey key, TerrainProbe probe) {
+        boolean nether = key.nether();
+        long salt = nether ? 0x4E45544845524CL : 0L;
         RandomSource r = new XoroshiroRandomSource(mix(mix(key.seed() ^ key.cellX()) ^ key.cellZ()) ^ salt);
-        List<Vein> scatter = key.nether() ? List.of() : scatterVeins(key, probe);
+        if (r.nextFloat() >= (nether ? NETHER_CELL_CHANCE : CELL_CHANCE)) return List.of();
 
-        Kind kind;
-        if (key.nether()) {
-            if (r.nextFloat() > NETHER_NODE_CHANCE) return new Node(0, 0, 0, Kind.HYDROTHERMAL, List.of(), scatter);
-            kind = Kind.NETHER;
-        } else {
-            if (r.nextFloat() > NODE_CHANCE) return new Node(0, 0, 0, Kind.HYDROTHERMAL, List.of(), scatter);
-            kind = r.nextFloat() < LAYERED_SHARE ? Kind.LAYERED : Kind.HYDROTHERMAL;
+        Type type = pick(nether ? NETHER : OVERWORLD, r);
+        Shape s = type.shape();
+
+        // Центр: середина ячейки плюс случайный сдвиг до +-JITTER блоков; не в воздухе, пещере или жидкости
+        double centerX = key.cellX() * (double) CELL + CELL / 2.0;
+        double centerZ = key.cellZ() * (double) CELL + CELL / 2.0;
+        double vx = 0, vy = 0, vz = 0;
+        boolean ok = false;
+        for (int attempt = 0; attempt < PLACE_ATTEMPTS && !ok; attempt++) {
+            vx = centerX + (r.nextDouble() * 2 - 1) * JITTER;
+            vz = centerZ + (r.nextDouble() * 2 - 1) * JITTER;
+            vy = type.yMin() + r.nextDouble() * (type.yMax() - type.yMin());
+            ok = probe.isSolid(Mth.floor(vx), Mth.floor(vy), Mth.floor(vz));
         }
+        if (!ok) return List.of();
 
-        double nodeX = key.cellX() * (double) CELL + 96 + r.nextDouble() * (CELL - 192);
-        double nodeZ = key.cellZ() * (double) CELL + 96 + r.nextDouble() * (CELL - 192);
+        double a = s.a() + r.nextDouble() * s.aVar();
+        double b = s.b() + r.nextDouble() * s.bVar();
+        double c = s.c() + r.nextDouble() * s.cVar();
+        double dip = Math.toRadians(s.dip() + r.nextDouble() * s.dipVar());
+        double theta = r.nextDouble() * Math.PI;
+        boolean mark = s.surface() && r.nextFloat() < SURFACE_CHANCE;
 
-        double radius;
-        int count;
-        Type layerType = null;   // слоистый узел целиком одного типа: не больше 4 минералов на узел
-        switch (kind) {
-            case LAYERED -> {
-                radius = LAYER_RADIUS_MIN + r.nextDouble() * LAYER_RADIUS_VAR;
-                count = LAYER_VEINS_MIN + r.nextInt(LAYER_VEINS_VAR);
-                layerType = LAYERED.get(r.nextInt(LAYERED.size()));
-            }
-            case NETHER -> {
-                radius = NETHER_RADIUS_MIN + r.nextDouble() * NETHER_RADIUS_VAR;
-                count = NETHER_VEINS_MIN + r.nextInt(NETHER_VEINS_VAR);
-            }
-            default -> {
-                radius = HYDRO_RADIUS_MIN + r.nextDouble() * HYDRO_RADIUS_VAR;
-                count = HYDRO_VEINS_MIN + r.nextInt(HYDRO_VEINS_VAR);
-            }
-        }
-
-        List<Vein> out = new ArrayList<>(count);
-        List<double[]> patches = new ArrayList<>();   // центры уже назначенных пятен на поверхности
-        for (int i = 0; i < count; i++) {
-            // Тип, не зависящий от кольца: акцент, жилы Незера, слоистый узел
-            Type fixed = null;
-            if (kind != Kind.NETHER && r.nextFloat() < ACCENT_CHANCE) {
-                fixed = SAPPHIRE;
-            } else if (kind == Kind.NETHER) {
-                fixed = r.nextBoolean() ? QUARTZ_VEIN : SULFUR_VEIN;
-            } else if (kind == Kind.LAYERED) {
-                fixed = layerType;
-            }
-
-            // Размеры и наклон
-            double a, b, c, dipDeg;
-            if (fixed == SAPPHIRE) {
-                a = 6 + r.nextDouble() * 6;     // длина 12-24
-                b = 5 + r.nextDouble() * 4;
-                c = 1.5 + r.nextDouble() * 1.0; // толщина 3-5
-                dipDeg = 30 + r.nextDouble() * 55;
-            } else if (fixed == QUARTZ_VEIN) {
-                a = 7 + r.nextDouble() * 7;     // небольшая жила
-                b = 5 + r.nextDouble() * 5;
-                c = 1.5 + r.nextDouble() * 1.5;
-                dipDeg = 20 + r.nextDouble() * 65;
-            } else if (fixed == SULFUR_VEIN) {
-                a = 12 + r.nextDouble() * 12;
-                b = 8 + r.nextDouble() * 8;
-                c = 2.0 + r.nextDouble() * 2.0;
-                dipDeg = 20 + r.nextDouble() * 65;
-            } else if (kind == Kind.LAYERED) {
-                // Пологие пласты
-                a = 14 + r.nextDouble() * 16;   // длина 28-60
-                b = 10 + r.nextDouble() * 10;   // ширина 20-40
-                c = 2.5 + r.nextDouble() * 2.0; // толщина 5-9
-                dipDeg = 5 + r.nextDouble() * 25;
-            } else {
-                // Крутые жилы
-                a = 18 + r.nextDouble() * 22;   // длина 36-80
-                b = 10 + r.nextDouble() * 12;   // высота 20-44
-                c = 2.5 + r.nextDouble() * 2.0; // толщина 5-9
-                dipDeg = 50 + r.nextDouble() * 35;
-            }
-            double reach = Math.max(a, Math.max(b, c)) + 1;
-
-            // Позиция: несколько попыток найти место, не налезающее на соседние жилы и не в пустоте
-            double vx = 0, vy = 0, vz = 0;
-            Type type = null;
-            boolean accepted = false;       // нашли твёрдое место без наложения
-            boolean haveFallback = false;   // нашли хотя бы твёрдое место (с наложением)
-            double fx = 0, fy = 0, fz = 0;
-            Type ftype = null;
-            for (int attempt = 0; attempt < PLACE_ATTEMPTS; attempt++) {
-                double t = Math.pow(r.nextDouble(), CENTER_BIAS);   // 0 = центр узла, 1 = край
-                double ang = r.nextDouble() * Math.PI * 2;
-                vx = nodeX + Math.cos(ang) * t * radius;
-                vz = nodeZ + Math.sin(ang) * t * radius;
-                type = fixed != null ? fixed : hydroType(t + (r.nextDouble() - 0.5) * 0.1, r);
-                vy = type.yMin() + r.nextDouble() * (type.yMax() - type.yMin());
-                // Центр жилы не должен оказаться в воздухе, пещере или жидкости
-                if (!probe.isSolid(Mth.floor(vx), Mth.floor(vy), Mth.floor(vz))) continue;
-                if (!overlaps(out, vx, vy, vz, reach)) {
-                    accepted = true;
-                    break;
-                }
-                fx = vx; fy = vy; fz = vz; ftype = type;
-                haveFallback = true;
-            }
-            if (!accepted) {
-                if (!haveFallback) continue;   // все попытки в пустоте: жилу пропускаем
-                vx = fx; vy = fy; vz = fz; type = ftype;
-            }
-
-            // Ориентация: простирание theta, падение dip (от горизонтали)
-            double theta = r.nextDouble() * Math.PI;
-            double dip = Math.toRadians(dipDeg);
-            double cs = Math.cos(theta), sn = Math.sin(theta);
-            double cd = Math.cos(dip), sd = Math.sin(dip);
-            // U = (cs, 0, sn); W = (-sn*cd, -sd, cs*cd); N = U x W
-            // Пятно на поверхности: не у сапфира и не в Незере, и не ближе SURFACE_MIN_SPACING к другому пятну узла
-            boolean mark = kind != Kind.NETHER && fixed != SAPPHIRE && r.nextFloat() < SURFACE_CHANCE;
-            if (mark) {
-                for (double[] q : patches) {
-                    if (Math.hypot(q[0] - vx, q[1] - vz) < SURFACE_MIN_SPACING) {
-                        mark = false;
-                        break;
-                    }
-                }
-            }
-            if (mark) patches.add(new double[] {vx, vz});
-            out.add(new Vein(r.nextLong(), vx, vy, vz, a, b, c,
-                    cs, sn,
-                    -sn * cd, -sd, cs * cd,
-                    sn * sd, -cd, -cs * sd,
-                    type.mix(),
-                    mark));
-        }
-        return new Node(nodeX, nodeZ, radius, kind, List.copyOf(out), scatter);
+        // Ориентация: простирание theta, падение dip (от горизонтали)
+        double cs = Math.cos(theta), sn = Math.sin(theta);
+        double cd = Math.cos(dip), sd = Math.sin(dip);
+        // U = (cs, 0, sn); W = (-sn*cd, -sd, cs*cd); N = U x W
+        return List.of(new Vein(r.nextLong(), vx, vy, vz, a, b, c,
+                cs, sn,
+                -sn * cd, -sd, cs * cd,
+                sn * sd, -cd, -cs * sd,
+                type.mix(), mark));
     }
 
-    private static boolean overlaps(List<Vein> placed, double x, double y, double z, double reach) {
-        for (Vein o : placed) {
-            double dx = o.cx() - x, dy = o.cy() - y, dz = o.cz() - z;
-            double min = MIN_SEPARATION * (o.reach() + reach);
-            if (dx * dx + dy * dy + dz * dz < min * min) return true;
+    private static Type pick(List<Type> pool, RandomSource r) {
+        int total = 0;
+        for (Type t : pool) total += t.weight();
+        int roll = r.nextInt(total);
+        for (Type t : pool) {
+            roll -= t.weight();
+            if (roll < 0) return t;
         }
-        return false;
-    }
-
-    /** Тип жилы гидротермального узла по расстоянию от центра (ring: 0 = центр, 1 = край). */
-    private static Type hydroType(double ring, RandomSource r) {
-        if (ring < RING_TIN) {
-            return CORE;
-        } else if (ring < RING_COPPER) {
-            return r.nextFloat() < 0.30f ? COPPER_OXIDIZED : COPPER_DEEP;
-        } else if (ring < RING_LEADZINC) {
-            return LEAD_ZINC;
-        } else {
-            return SILVER_EDGE;
-        }
+        return pool.get(pool.size() - 1);
     }
 
     // ---- Детерминированный хэш для позиций (не зависит от порядка генерации чанков) ----
