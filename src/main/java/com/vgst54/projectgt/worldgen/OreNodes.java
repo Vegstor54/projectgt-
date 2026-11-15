@@ -49,16 +49,15 @@ public final class OreNodes {
     /** Радиус пятна = BASE + PER_LENGTH * длина жилы. */
     public static final double SURFACE_RADIUS_BASE = 2.5, SURFACE_RADIUS_PER_LENGTH = 0.1;
 
-    /** Форма жилы: полуоси линзы и угол падения как «минимум + случайная добавка», в блоках и градусах. */
+    /**
+     * Размер и форма жилы, задаются числами прямо в каждой жиле. Каждое значение это «минимум, добавка»:
+     * итог = минимум + случайное от 0 до добавки. Порядок: a, aVar (полуось вдоль простирания, длина жилы ~2a),
+     * b, bVar (полуось вниз по падению), c, cVar (полутолщина), dip, dipVar (угол падения, градусы),
+     * surface (ставить ли пятно на поверхности). Всё в блоках.
+     */
     private record Shape(double a, double aVar, double b, double bVar, double c, double cVar,
                          double dip, double dipVar, boolean surface) {}
 
-    private static final Shape STEEP = new Shape(18, 22, 10, 12, 2.5, 2.0, 50, 35, true);   // крутые жилы 36-80 в длину
-    private static final Shape PLATE = new Shape(14, 16, 10, 10, 2.5, 2.0, 5, 25, true);    // пологие пласты 28-60
-    private static final Shape SMALL = new Shape(8, 8, 5, 5, 1.5, 1.5, 40, 40, true);       // мелкие жилы 16-32
-    private static final Shape GEM = new Shape(6, 6, 5, 4, 1.5, 1.0, 30, 55, false);        // самоцветы 12-24
-    private static final Shape QUARTZ_SHAPE = new Shape(7, 7, 5, 5, 1.5, 1.5, 20, 65, false);
-    private static final Shape SULFUR_SHAPE = new Shape(12, 12, 8, 8, 2, 2, 20, 65, false);
 
     /** Тип жилы: диапазон высот, форма, вес при выборе и состав. Доли минералов в процентах. */
     private record Type(int yMin, int yMax, Shape shape, int weight, Mix mix) {}
@@ -66,38 +65,38 @@ public final class OreNodes {
     // Минералы не повторяются, кроме халькопирита и касситерита во второй медно-оловянной жиле. Мелкая жила одна: эта же медно-оловянная.
     private static final List<Type> OVERWORLD = List.of(
             // Гидротермальные (крутые жилы)
-            new Type(-48, 16, STEEP, 10, Mix.of(     // олово и вольфрам
+            new Type(-48, 16, new Shape(18, 22, 10, 12, 2.5, 2.0, 50, 35, true), 10, Mix.of(     // олово и вольфрам
                     p(Materials.CASSITERITE, 70), p(Materials.WOLFRAMITE, 30))),
-            new Type(-48, 16, STEEP, 10, Mix.of(     // магнетит
+            new Type(-48, 16, new Shape(18, 22, 10, 12, 2.5, 2.0, 50, 35, true), 10, Mix.of(     // магнетит
                     p(Materials.MAGNETITE, 65), p(Materials.VANADIUM_MAGNETITE, 25), p(Materials.NATIVE_GOLD, 10))),
-            new Type(-32, 24, STEEP, 12, Mix.of(     // медная жила: халькопирит и пирит + ванильные медь и железо
+            new Type(-32, 24, new Shape(18, 22, 10, 12, 2.5, 2.0, 50, 35, true), 12, Mix.of(     // медная жила: халькопирит и пирит + ванильные медь и железо
                     p(Materials.CHALCOPYRITE, 40), p(Materials.PYRITE, 25), p(Materials.COPPER, 20), p(Materials.IRON, 15))),
-            new Type(40, 120, SMALL, 8, Mix.of(      // небольшая неглубокая медно-оловянная жила: халькопирит, касситерит, цеолит, реальгар
+            new Type(40, 120, new Shape(8, 8, 5, 5, 1.5, 1.5, 40, 40, true), 8, Mix.of(      // небольшая неглубокая медно-оловянная жила: халькопирит, касситерит, цеолит, реальгар
                     p(Materials.CHALCOPYRITE, 45), p(Materials.CASSITERITE, 25), p(Materials.ZEOLITE, 15), p(Materials.REALGAR, 15))),
-            new Type(16, 56, STEEP, 5, Mix.of(       // окисленная медь у поверхности
+            new Type(16, 56, new Shape(18, 22, 10, 12, 2.5, 2.0, 50, 35, true), 5, Mix.of(       // окисленная медь у поверхности
                     p(Materials.MALACHITE, 100))),
-            new Type(-16, 56, STEEP, 12, Mix.of(     // свинец и цинк
+            new Type(-16, 56, new Shape(18, 22, 10, 12, 2.5, 2.0, 50, 35, true), 12, Mix.of(     // свинец и цинк
                     p(Materials.GALENA, 55), p(Materials.SPHALERITE, 45))),
-            new Type(-8, 56, STEEP, 6, Mix.of(       // серебро
+            new Type(-8, 56, new Shape(18, 22, 10, 12, 2.5, 2.0, 50, 35, true), 6, Mix.of(       // серебро
                     p(Materials.ARGENTITE, 100))),
             // Слоистые (пологие пласты)
-            new Type(0, 56, PLATE, 8, Mix.of(        // красный и бурый железняк
+            new Type(0, 56, new Shape(14, 16, 10, 10, 2.5, 2.0, 5, 25, true), 8, Mix.of(        // красный и бурый железняк
                     p(Materials.HEMATITE, 60), p(Materials.LIMONITE, 40))),
-            new Type(-48, 0, PLATE, 4, Mix.of(       // хром и никель
+            new Type(-48, 0, new Shape(14, 16, 10, 10, 2.5, 2.0, 5, 25, true), 4, Mix.of(       // хром и никель
                     p(Materials.CHROMITE, 60), p(Materials.PENTLANDITE, 40))),
-            new Type(16, 64, PLATE, 5, Mix.of(
+            new Type(16, 64, new Shape(14, 16, 10, 10, 2.5, 2.0, 5, 25, true), 5, Mix.of(
                     p(Materials.BAUXITE, 100))),
-            new Type(-8, 48, PLATE, 4, Mix.of(       // марганец с сидеритом
+            new Type(-8, 48, new Shape(14, 16, 10, 10, 2.5, 2.0, 5, 25, true), 4, Mix.of(       // марганец с сидеритом
                     p(Materials.PYROLUSITE, 70), p(Materials.SIDERITE, 30))),
-            new Type(0, 64, PLATE, 8, Mix.of(        // угольный пласт: только уголь
+            new Type(0, 64, new Shape(14, 16, 10, 10, 2.5, 2.0, 5, 25, true), 8, Mix.of(        // угольный пласт: только уголь
                     p(Materials.COAL, 100))),
             // Самоцветы
-            new Type(-48, 24, GEM, 3, Mix.of(
+            new Type(-48, 24, new Shape(6, 6, 5, 4, 1.5, 1.0, 30, 55, false), 3, Mix.of(
                     p(Materials.SAPPHIRE, 100))));
 
     private static final List<Type> NETHER = List.of(
-            new Type(10, 110, QUARTZ_SHAPE, 1, Mix.of(p(Materials.QUARTZ, 100))),
-            new Type(10, 110, SULFUR_SHAPE, 1, Mix.of(p(Materials.SULFUR, 100))));
+            new Type(10, 110, new Shape(7, 7, 5, 5, 1.5, 1.5, 20, 65, false), 1, Mix.of(p(Materials.QUARTZ, 100))),
+            new Type(10, 110, new Shape(12, 12, 8, 8, 2, 2, 20, 65, false), 1, Mix.of(p(Materials.SULFUR, 100))));
 
     private record CellKey(long seed, int cellX, int cellZ, boolean nether) {}
 
