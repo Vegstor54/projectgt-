@@ -5,6 +5,10 @@ import java.util.List;
 import com.vgst54.projectgt.material.Material;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
@@ -50,10 +54,52 @@ public class OreNodeFeature extends Feature<NoneFeatureConfiguration> {
                     if (v.cx() + reach < minX || v.cx() - reach > maxX) continue;
                     if (v.cz() + reach < minZ || v.cz() - reach > maxZ) continue;
                     placed |= carve(level, v, pos, minX, maxX, minZ, maxZ, minY, maxY);
+                    placed |= markSurface(level, v, probe, pos, minX, maxX, minZ, maxZ);
                 }
             }
         }
         return placed;
+    }
+
+    /**
+     * Пятно на поверхности над жилой: гравий, в центре гуще руда из состава жилы. Край рваный.
+     * Колонки берутся из текущего чанка, поэтому соседние чанки рисуют свои части пятна независимо.
+     */
+    private static boolean markSurface(WorldGenLevel level, Vein v, TerrainProbe probe, BlockPos.MutableBlockPos pos,
+                                       int minX, int maxX, int minZ, int maxZ) {
+        if (!v.surfaceMark()) return false;
+        if (probe.surfaceY(Mth.floor(v.cx()), Mth.floor(v.cz())) - v.cy() > OreNodes.SURFACE_MAX_DEPTH) return false;
+
+        double radius = OreNodes.SURFACE_RADIUS_BASE + OreNodes.SURFACE_RADIUS_PER_LENGTH * v.a();
+        int x0 = Math.max(minX, (int) Math.floor(v.cx() - radius));
+        int x1 = Math.min(maxX, (int) Math.ceil(v.cx() + radius));
+        int z0 = Math.max(minZ, (int) Math.floor(v.cz() - radius));
+        int z1 = Math.min(maxZ, (int) Math.ceil(v.cz() + radius));
+
+        boolean any = false;
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                double d = Math.hypot(x + 0.5 - v.cx(), z + 0.5 - v.cz()) / radius;   // 0 в центре, 1 на краю
+                if (d > 1.0) continue;
+                // Рваный край: в центре пятно сплошное, к краю остаются отдельные блоки
+                if (OreNodes.hash01(v.seed() ^ 0x7f4a7c15L, x, 0, z) > 1.0 - 0.8 * d) continue;
+
+                pos.set(x, level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) - 1, z);
+                BlockState surface = level.getBlockState(pos);
+                if (surface.isAir() || !surface.getFluidState().isEmpty() || surface.is(Blocks.BEDROCK)) continue;
+
+                // Руды больше в центре; минерал по кластерам 2x2, как под землёй
+                BlockState place = Blocks.GRAVEL.defaultBlockState();
+                if (OreNodes.hash01(v.seed() ^ 0x2545F491L, x, 1, z) < 0.45 - 0.25 * d) {
+                    Material mineral = v.mix().pick(OreNodes.hash01(v.seed() ^ 0x5bd1e995L, x >> 1, 7, z >> 1));
+                    Block ore = OreLookup.surfaceOre(mineral);
+                    if (ore != null) place = ore.defaultBlockState();
+                }
+                level.setBlock(pos, place, 2);
+                any = true;
+            }
+        }
+        return any;
     }
 
     private static boolean carve(WorldGenLevel level, Vein v, BlockPos.MutableBlockPos pos,

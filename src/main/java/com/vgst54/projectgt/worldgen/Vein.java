@@ -12,7 +12,8 @@ public record Vein(
         double ux, double uz,                 // вдоль простирания (горизонтально)
         double wx, double wy, double wz,      // вниз по падению
         double nx, double ny, double nz,      // нормаль к плоскости жилы
-        Mix mix) {
+        Mix mix,
+        boolean surfaceMark) {   // ставить ли над жилой пятно гравия и руды на поверхности
 
     /** Радиус сферы, в которую целиком вписывается жила. */
     public double reach() {
