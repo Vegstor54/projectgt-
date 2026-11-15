@@ -156,6 +156,7 @@ public final class DataGenerators {
      * Плавка сырой руды в слитки: печь (200 тиков) и плавильная печь (100 тиков).
      * Это простая переплавка для начальных стадий; для высоких стадий будет отдельная продвинутая переработка.
      * Минералы без своего слитка в моде (свинец, цинк, серебро и т.д.) пока не плавятся.
+     * Ванадиевый магнетит тоже не плавится: его надо сначала разделить (для получения ванадия), это будет в продвинутой переработке.
      */
     static final class ModRecipes extends RecipeProvider {
         ModRecipes(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
@@ -169,13 +170,12 @@ public final class DataGenerators {
             Supplier<ItemLike> tin = () -> ModItems.get(Materials.TIN, MaterialForm.INGOT).get();
 
             Map<Material, Supplier<ItemLike>> table = new LinkedHashMap<>();
-            // Железо (ванадиевый магнетит пока тоже даёт просто железо)
+            // Железо
             table.put(Materials.PYRITE, iron);
             table.put(Materials.HEMATITE, iron);
             table.put(Materials.MAGNETITE, iron);
             table.put(Materials.LIMONITE, iron);
             table.put(Materials.SIDERITE, iron);
-            table.put(Materials.VANADIUM_MAGNETITE, iron);
             // Медь, олово, золото
             table.put(Materials.CHALCOPYRITE, copper);
             table.put(Materials.MALACHITE, copper);
