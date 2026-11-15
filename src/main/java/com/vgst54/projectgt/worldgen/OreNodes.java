@@ -57,16 +57,18 @@ public final class OreNodes {
     public static final double DENSITY_EDGE = 0.25, DENSITY_CORE = 0.80;
 
     /** Какая доля жил получает пятно на поверхности (остальные остаются «слепыми», их находит только бур). */
-    public static final float SURFACE_CHANCE = 0.20f;
+    public static final float SURFACE_CHANCE = 1.0f;
     /** Пятно гравия и руды над жилой: не ставим, если жила глубже этого под поверхностью. */
-    public static final int SURFACE_MAX_DEPTH = 64;
+    public static final int SURFACE_MAX_DEPTH = 128;
+    /** Минимальное расстояние между пятнами одного узла (по горизонтали), чтобы руда не лежала кучей. */
+    public static final double SURFACE_MIN_SPACING = 48;
     /** Радиус пятна = BASE + PER_LENGTH * длина жилы (для жилы 36-80 блоков это около 4-7). */
     public static final double SURFACE_RADIUS_BASE = 2.5, SURFACE_RADIUS_PER_LENGTH = 0.1;
 
     /** Попыток найти место жиле, не налезающее на соседние; после неудач ставим как есть. */
     public static final int PLACE_ATTEMPTS = 16;
     /** Минимальное расстояние между центрами жил как доля суммы их радиусов. */
-    public static final double MIN_SEPARATION = 0.5;
+    public static final double MIN_SEPARATION = 0.7;
 
     /** Степень распределения жил по радиусу: 0.5 = равномерно по площади, больше = гуще к центру. */
     public static final double CENTER_BIAS = 0.6;
@@ -206,6 +208,7 @@ public final class OreNodes {
         }
 
         List<Vein> out = new ArrayList<>(count);
+        List<double[]> patches = new ArrayList<>();   // центры уже назначенных пятен на поверхности
         for (int i = 0; i < count; i++) {
             // Тип, не зависящий от кольца: акцент, жилы Незера, слоистый узел
             Type fixed = null;
@@ -283,12 +286,23 @@ public final class OreNodes {
             double cs = Math.cos(theta), sn = Math.sin(theta);
             double cd = Math.cos(dip), sd = Math.sin(dip);
             // U = (cs, 0, sn); W = (-sn*cd, -sd, cs*cd); N = U x W
+            // Пятно на поверхности: не у сапфира и не в Незере, и не ближе SURFACE_MIN_SPACING к другому пятну узла
+            boolean mark = kind != Kind.NETHER && fixed != SAPPHIRE && r.nextFloat() < SURFACE_CHANCE;
+            if (mark) {
+                for (double[] q : patches) {
+                    if (Math.hypot(q[0] - vx, q[1] - vz) < SURFACE_MIN_SPACING) {
+                        mark = false;
+                        break;
+                    }
+                }
+            }
+            if (mark) patches.add(new double[] {vx, vz});
             out.add(new Vein(r.nextLong(), vx, vy, vz, a, b, c,
                     cs, sn,
                     -sn * cd, -sd, cs * cd,
                     sn * sd, -cd, -cs * sd,
                     type.mix(),
-                    kind != Kind.NETHER && fixed != SAPPHIRE && r.nextFloat() < SURFACE_CHANCE));
+                    mark));
         }
         return new Node(nodeX, nodeZ, radius, kind, List.copyOf(out));
     }
