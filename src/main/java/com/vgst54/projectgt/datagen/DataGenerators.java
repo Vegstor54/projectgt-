@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import com.vgst54.projectgt.ProjectGT;
+import com.vgst54.projectgt.material.Heat;
 import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.material.Materials;
@@ -161,7 +162,12 @@ public final class DataGenerators {
      * Ванадиевый магнетит тоже не плавится: его надо сначала разделить (для получения ванадия), это будет в продвинутой переработке.
      */
     static final class ModRecipes extends RecipeProvider {
-        private record SmeltingOutput(Supplier<ItemLike> item, int count) {}
+        /** Результат плавки. metal: материал металла в результате (по его meltingPoint решается, плавится ли в печи), null для неметаллов. */
+        private record SmeltingOutput(Supplier<ItemLike> item, int count, Material metal) {
+            SmeltingOutput(Supplier<ItemLike> item, int count) {
+                this(item, count, null);
+            }
+        }
 
         ModRecipes(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
             super(output, lookup);
@@ -181,20 +187,20 @@ public final class DataGenerators {
 
             Map<Material, SmeltingOutput> table = new LinkedHashMap<>();
             // Железо
-            table.put(Materials.PYRITE, new SmeltingOutput(iron, 1));
-            table.put(Materials.HEMATITE, new SmeltingOutput(iron, 1));
-            table.put(Materials.MAGNETITE, new SmeltingOutput(iron, 1));
-            table.put(Materials.LIMONITE, new SmeltingOutput(iron, 1));
-            table.put(Materials.SIDERITE, new SmeltingOutput(iron, 1));
+            table.put(Materials.PYRITE, new SmeltingOutput(iron, 1, Materials.IRON));
+            table.put(Materials.HEMATITE, new SmeltingOutput(iron, 1, Materials.IRON));
+            table.put(Materials.MAGNETITE, new SmeltingOutput(iron, 1, Materials.IRON));
+            table.put(Materials.LIMONITE, new SmeltingOutput(iron, 1, Materials.IRON));
+            table.put(Materials.SIDERITE, new SmeltingOutput(iron, 1, Materials.IRON));
             // Медь, олово, золото
-            table.put(Materials.CHALCOPYRITE, new SmeltingOutput(copper, 1));
-            table.put(Materials.MALACHITE, new SmeltingOutput(copper, 1));
-            table.put(Materials.CASSITERITE, new SmeltingOutput(tin, 1));
-            table.put(Materials.TIN, new SmeltingOutput(tin, 1));    // сырая оловянная руда самого олова
-            table.put(Materials.NATIVE_GOLD, new SmeltingOutput(gold, 1));
+            table.put(Materials.CHALCOPYRITE, new SmeltingOutput(copper, 1, Materials.COPPER));
+            table.put(Materials.MALACHITE, new SmeltingOutput(copper, 1, Materials.COPPER));
+            table.put(Materials.CASSITERITE, new SmeltingOutput(tin, 1, Materials.TIN));
+            table.put(Materials.TIN, new SmeltingOutput(tin, 1, Materials.TIN));    // сырая оловянная руда самого олова
+            table.put(Materials.NATIVE_GOLD, new SmeltingOutput(gold, 1, Materials.GOLD));
             // Никель и цинк
-            table.put(Materials.PENTLANDITE, new SmeltingOutput(nickel, 1));
-            table.put(Materials.SPHALERITE, new SmeltingOutput(zinc, 1));
+            table.put(Materials.PENTLANDITE, new SmeltingOutput(nickel, 1, Materials.NICKEL));
+            table.put(Materials.SPHALERITE, new SmeltingOutput(zinc, 1, Materials.ZINC));
             // Алмаз, уголь, графит (графит плавится в пыль)
             table.put(Materials.DIAMOND, new SmeltingOutput(diamond, 1));
             table.put(Materials.COAL, new SmeltingOutput(coal, 2));
@@ -209,15 +215,15 @@ public final class DataGenerators {
             table.remove(Materials.COAL);
             table.remove(Materials.GRAPHITE);
             table.remove(Materials.REDSTONE);   // у редстоуна нет своей пыли, результат и так пыль
-            table.put(Materials.IRON, new SmeltingOutput(() -> Items.IRON_INGOT, 1));
-            table.put(Materials.COPPER, new SmeltingOutput(() -> Items.COPPER_INGOT, 1));
-            table.put(Materials.GOLD, new SmeltingOutput(() -> Items.GOLD_INGOT, 1));
+            table.put(Materials.IRON, new SmeltingOutput(() -> Items.IRON_INGOT, 1, Materials.IRON));
+            table.put(Materials.COPPER, new SmeltingOutput(() -> Items.COPPER_INGOT, 1, Materials.COPPER));
+            table.put(Materials.GOLD, new SmeltingOutput(() -> Items.GOLD_INGOT, 1, Materials.GOLD));
             table.put(Materials.BRONZE, new SmeltingOutput(
-                    () -> ModItems.get(Materials.BRONZE, MaterialForm.INGOT).get(), 1));
-                table.put(Materials.NICKEL, new SmeltingOutput(
-                    () -> ModItems.get(Materials.NICKEL, MaterialForm.INGOT).get(), 1));
-                table.put(Materials.ZINC, new SmeltingOutput(
-                    () -> ModItems.get(Materials.ZINC, MaterialForm.INGOT).get(), 1));
+                    () -> ModItems.get(Materials.BRONZE, MaterialForm.INGOT).get(), 1, Materials.BRONZE));
+            table.put(Materials.NICKEL, new SmeltingOutput(
+                    () -> ModItems.get(Materials.NICKEL, MaterialForm.INGOT).get(), 1, Materials.NICKEL));
+            table.put(Materials.ZINC, new SmeltingOutput(
+                    () -> ModItems.get(Materials.ZINC, MaterialForm.INGOT).get(), 1, Materials.ZINC));
             return table;
         }
 
@@ -234,6 +240,7 @@ public final class DataGenerators {
         @Override
         protected void buildRecipes(RecipeOutput output) {
             smeltingTable().forEach((material, result) -> {
+                if (!Heat.furnaceCanSmelt(result.metal())) return;   // слишком тугоплавкий для обычной печи
                 ItemLike out = result.item().get();
                 ItemStack resultStack = new ItemStack(out.asItem(), result.count());
                 var rawTag = MaterialForm.RAW_ORE.tag(material);
@@ -243,6 +250,7 @@ public final class DataGenerators {
             });
 
             dustSmeltingTable().forEach((material, result) -> {
+                if (!Heat.furnaceCanSmelt(result.metal())) return;
                 ItemLike out = result.item().get();
                 var dustTag = MaterialForm.DUST.tag(material);
                 String name = "dust_" + material.id() + "_to_" + BuiltInRegistries.ITEM.getKey(out.asItem()).getPath();
