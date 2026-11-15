@@ -83,6 +83,9 @@ public final class Materials {
     public static final Material VANADIUM_MAGNETITE = ore("vanadium_magnetite", "Vanadium Magnetite", 0x4A4F6A, IconSet.METALLIC);
     // Самоцвет Верхнего мира, сера и кварц Незера (кварц дропает ванильный предмет)
     public static final Material SAPPHIRE     = ore("sapphire",     "Sapphire",     0x2F5BD6, IconSet.CRYSTAL);
+    // Спутники редстоуновой жилы: киноварь и рубин
+    public static final Material CINNABAR     = ore("cinnabar",     "Cinnabar",     0x9B2D30, IconSet.METALLIC);
+    public static final Material RUBY         = ore("ruby",         "Ruby",         0xD81B60, IconSet.CRYSTAL);
     public static final Material SULFUR       = ore("sulfur",       "Sulfur",       0xE6D63A, IconSet.MINERAL);
     // Цеолит и реальгар (спутники халькопирит-касситеритовой жилы)
     public static final Material ZEOLITE      = ore("zeolite",      "Zeolite",      0xE8E4DC, IconSet.MINERAL);
