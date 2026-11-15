@@ -63,7 +63,7 @@ public final class OreNodes {
     /** Тип жилы: диапазон высот, форма, вес при выборе и состав. Доли минералов в процентах. */
     private record Type(int yMin, int yMax, Shape shape, int weight, Mix mix) {}
 
-    // Минералы не повторяются, кроме халькопирита и касситерита во второй медно-оловянной жиле. Мелкая жила одна: реальгар.
+    // Минералы не повторяются, кроме халькопирита и касситерита во второй медно-оловянной жиле. Мелкая жила одна: эта же медно-оловянная.
     private static final List<Type> OVERWORLD = List.of(
             // Гидротермальные (крутые жилы)
             new Type(-48, 16, STEEP, 10, Mix.of(     // олово и вольфрам
@@ -72,16 +72,14 @@ public final class OreNodes {
                     p(Materials.MAGNETITE, 65), p(Materials.VANADIUM_MAGNETITE, 25), p(Materials.NATIVE_GOLD, 10))),
             new Type(-32, 24, STEEP, 12, Mix.of(     // медная жила: халькопирит и пирит + ванильные медь и железо
                     p(Materials.CHALCOPYRITE, 40), p(Materials.PYRITE, 25), p(Materials.COPPER, 20), p(Materials.IRON, 15))),
-            new Type(-32, 16, STEEP, 8, Mix.of(      // медно-оловянная жила: халькопирит с касситеритом и цеолитом
-                    p(Materials.CHALCOPYRITE, 50), p(Materials.CASSITERITE, 30), p(Materials.ZEOLITE, 20))),
+            new Type(40, 120, SMALL, 8, Mix.of(      // небольшая неглубокая медно-оловянная жила: халькопирит, касситерит, цеолит, реальгар
+                    p(Materials.CHALCOPYRITE, 45), p(Materials.CASSITERITE, 25), p(Materials.ZEOLITE, 15), p(Materials.REALGAR, 15))),
             new Type(16, 56, STEEP, 5, Mix.of(       // окисленная медь у поверхности
                     p(Materials.MALACHITE, 100))),
             new Type(-16, 56, STEEP, 12, Mix.of(     // свинец и цинк
                     p(Materials.GALENA, 55), p(Materials.SPHALERITE, 45))),
             new Type(-8, 56, STEEP, 6, Mix.of(       // серебро
                     p(Materials.ARGENTITE, 100))),
-            new Type(40, 120, SMALL, 3, Mix.of(      // небольшая неглубокая жила реальгара
-                    p(Materials.REALGAR, 100))),
             // Слоистые (пологие пласты)
             new Type(0, 56, PLATE, 8, Mix.of(        // красный и бурый железняк
                     p(Materials.HEMATITE, 60), p(Materials.LIMONITE, 40))),
