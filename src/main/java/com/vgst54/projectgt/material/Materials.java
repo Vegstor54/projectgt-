@@ -44,9 +44,8 @@ public final class Materials {
             DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
 
     // --- Кристаллы ---
-    // Алмаз: руда дропает ванильный алмаз (своей сырой руды нет)
     public static final Material DIAMOND  = add(Material.of("diamond", "Diamond", 0x58E0D8, IconSet.CRYSTAL,
-            DUST).withVanillaRaw(() -> Items.DIAMOND));
+            RAW_ORE, DUST));
 
     // --- Минералы ---
     public static final Material REDSTONE = add(Material.of("redstone", "Redstone", 0xE02020, IconSet.MINERAL,
@@ -86,9 +85,9 @@ public final class Materials {
     public static final Material REALGAR      = ore("realgar",      "Realgar",      0xD2452B, IconSet.MINERAL);
     public static final Material QUARTZ       = add(Material.of("quartz", "Quartz", 0xE8E0D8, IconSet.CRYSTAL, DUST)
             .withVanillaRaw(() -> Items.QUARTZ));
-    // Уголь: блоки руды дропают ванильный уголь
-    public static final Material COAL         = add(Material.of("coal", "Coal", 0x2B2B2B, IconSet.MINERAL, DUST)
-            .withVanillaRaw(() -> Items.COAL));
+    // Уголь: руда дропает сырой уголь, который плавится в ванильный уголь
+    public static final Material COAL         = add(Material.of("coal", "Coal", 0x2B2B2B, IconSet.MINERAL,
+            RAW_ORE, DUST));
     public static final Material GRAPHITE     = ore("graphite",     "Graphite",     0x3A3A44, IconSet.MINERAL);
 
     private Materials() {}

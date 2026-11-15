@@ -156,6 +156,8 @@ public final class DataGenerators {
      * Плавка сырой руды в слитки: печь (200 тиков) и плавильная печь (100 тиков).
      * Это простая переплавка для начальных стадий; для высоких стадий будет отдельная продвинутая переработка.
      * Минералы без своего слитка в моде (свинец, цинк, серебро и т.д.) пока не плавятся.
+     * Сюда же входит сырьё алмаза, угля и графита (графит даёт пыль).
+     * Ванадиевый магнетит тоже не плавится: его надо сначала разделить (для получения ванадия), это будет в продвинутой переработке.
      */
     static final class ModRecipes extends RecipeProvider {
         ModRecipes(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
@@ -167,20 +169,27 @@ public final class DataGenerators {
             Supplier<ItemLike> copper = () -> Items.COPPER_INGOT;
             Supplier<ItemLike> gold = () -> Items.GOLD_INGOT;
             Supplier<ItemLike> tin = () -> ModItems.get(Materials.TIN, MaterialForm.INGOT).get();
+            Supplier<ItemLike> diamond = () -> Items.DIAMOND;
+            Supplier<ItemLike> coal = () -> Items.COAL;
+            Supplier<ItemLike> graphiteDust = () -> ModItems.get(Materials.GRAPHITE, MaterialForm.DUST).get();
 
             Map<Material, Supplier<ItemLike>> table = new LinkedHashMap<>();
-            // Железо (ванадиевый магнетит пока тоже даёт просто железо)
+            // Железо
             table.put(Materials.PYRITE, iron);
             table.put(Materials.HEMATITE, iron);
             table.put(Materials.MAGNETITE, iron);
             table.put(Materials.LIMONITE, iron);
             table.put(Materials.SIDERITE, iron);
-            table.put(Materials.VANADIUM_MAGNETITE, iron);
             // Медь, олово, золото
             table.put(Materials.CHALCOPYRITE, copper);
             table.put(Materials.MALACHITE, copper);
             table.put(Materials.CASSITERITE, tin);
+            table.put(Materials.TIN, tin);    // сырая оловянная руда самого олова
             table.put(Materials.NATIVE_GOLD, gold);
+            // Алмаз, уголь, графит (графит плавится в пыль)
+            table.put(Materials.DIAMOND, diamond);
+            table.put(Materials.COAL, coal);
+            table.put(Materials.GRAPHITE, graphiteDust);
             return table;
         }
 
