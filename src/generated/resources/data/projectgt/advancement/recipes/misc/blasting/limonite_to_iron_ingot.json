@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_limonite_raw_ore": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#c:raw_materials/limonite"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "projectgt:blasting/limonite_to_iron_ingot"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_limonite_raw_ore"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "projectgt:blasting/limonite_to_iron_ingot"
+    ]
+  }
+}

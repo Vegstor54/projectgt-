@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_pyrite_raw_ore": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#c:raw_materials/pyrite"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "projectgt:blasting/pyrite_to_iron_ingot"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_pyrite_raw_ore"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "projectgt:blasting/pyrite_to_iron_ingot"
+    ]
+  }
+}

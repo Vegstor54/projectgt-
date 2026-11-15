@@ -24,6 +24,8 @@
     "#c:raw_materials/sapphire",
     "#c:raw_materials/sulfur",
     "#c:raw_materials/zeolite",
-    "#c:raw_materials/realgar"
+    "#c:raw_materials/realgar",
+    "#c:raw_materials/coal",
+    "#c:raw_materials/graphite"
   ]
 }

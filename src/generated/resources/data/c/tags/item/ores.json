@@ -28,6 +28,7 @@
     "#c:ores/zeolite",
     "#c:ores/realgar",
     "#c:ores/quartz",
-    "#c:ores/coal"
+    "#c:ores/coal",
+    "#c:ores/graphite"
   ]
 }

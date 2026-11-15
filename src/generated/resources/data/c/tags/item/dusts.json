@@ -30,6 +30,7 @@
     "#c:dusts/zeolite",
     "#c:dusts/realgar",
     "#c:dusts/quartz",
-    "#c:dusts/coal"
+    "#c:dusts/coal",
+    "#c:dusts/graphite"
   ]
 }

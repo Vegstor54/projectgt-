@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_malachite_raw_ore": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#c:raw_materials/malachite"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "projectgt:blasting/malachite_to_copper_ingot"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_malachite_raw_ore"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "projectgt:blasting/malachite_to_copper_ingot"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_native_gold_raw_ore": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#c:raw_materials/native_gold"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "projectgt:smelting/native_gold_to_gold_ingot"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_native_gold_raw_ore"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "projectgt:smelting/native_gold_to_gold_ingot"
+    ]
+  }
+}
