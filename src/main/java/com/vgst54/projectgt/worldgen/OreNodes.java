@@ -65,6 +65,11 @@ public final class OreNodes {
     /** Радиус пятна = BASE + PER_LENGTH * длина жилы (для жилы 36-80 блоков это около 4-7). */
     public static final double SURFACE_RADIUS_BASE = 2.5, SURFACE_RADIUS_PER_LENGTH = 0.1;
 
+    /** Фоновые мелкие жилы вне узлов: по SCATTER_MIN..SCATTER_MIN+VAR-1 на ячейку, чтобы нигде не было совсем пусто. */
+    public static final int SCATTER_MIN = 5, SCATTER_VAR = 6;
+    /** Доля фоновых жил, у которых есть пятно на поверхности. */
+    public static final float SCATTER_SURFACE_CHANCE = 0.5f;
+
     /** Попыток найти место жиле, не налезающее на соседние; после неудач ставим как есть. */
     public static final int PLACE_ATTEMPTS = 16;
     /** Минимальное расстояние между центрами жил как доля суммы их радиусов. */
@@ -122,6 +127,14 @@ public final class OreNodes {
             // марганцевые залежи
             new Type(-8, 48, Mix.of(p(Materials.PYROLUSITE, 70), p(Materials.SIDERITE, 15), p(Materials.LIMONITE, 15))));
 
+    // ---- Фоновые мелкие жилы (вне узлов) ----
+    private static final List<Type> SCATTER = List.of(
+            new Type(-24, 40, Mix.of(p(Materials.CASSITERITE, 80), p(Materials.PYRITE, 20))),
+            new Type(-16, 48, Mix.of(p(Materials.CHALCOPYRITE, 60), p(Materials.MALACHITE, 30), p(Materials.PYRITE, 10))),
+            new Type(0, 56, Mix.of(p(Materials.LIMONITE, 60), p(Materials.HEMATITE, 40))),
+            new Type(-16, 40, Mix.of(p(Materials.GALENA, 50), p(Materials.SPHALERITE, 50))),
+            new Type(-32, 16, Mix.of(p(Materials.MAGNETITE, 80), p(Materials.VANADIUM_MAGNETITE, 20))));
+
     // ---- Акцентная жила Верхнего мира ----
     private static final Type SAPPHIRE = new Type(-48, 24, Mix.of(
             p(Materials.SAPPHIRE, 75), p(Materials.BAUXITE, 25)));
@@ -134,11 +147,18 @@ public final class OreNodes {
     private record CellKey(long seed, int cellX, int cellZ, boolean nether) {}
 
     /** Рудный узел: центр, радиус, вид и все его жилы. NONE = в ячейке узла нет. */
-    public record Node(double x, double z, double radius, Kind kind, List<Vein> veins) {
-        public static final Node NONE = new Node(0, 0, 0, Kind.HYDROTHERMAL, List.of());
-
+    public record Node(double x, double z, double radius, Kind kind, List<Vein> veins, List<Vein> scatter) {
         public boolean exists() {
             return radius > 0;
+        }
+
+        /** Жилы узла и фоновые жилы ячейки. */
+        public List<Vein> allVeins() {
+            if (scatter.isEmpty()) return veins;
+            List<Vein> all = new ArrayList<>(veins.size() + scatter.size());
+            all.addAll(veins);
+            all.addAll(scatter);
+            return all;
         }
     }
 
@@ -154,7 +174,7 @@ public final class OreNodes {
     }
 
     public static List<Vein> veinsOfCell(long seed, int cellX, int cellZ, boolean nether, TerrainProbe probe) {
-        return nodeOfCell(seed, cellX, cellZ, nether, probe).veins();
+        return nodeOfCell(seed, cellX, cellZ, nether, probe).allVeins();
     }
 
     /** Существующие узлы в ячейках вокруг точки (радиус searchCells ячеек), от ближнего к дальнему. */
@@ -172,16 +192,77 @@ public final class OreNodes {
         return found;
     }
 
+    /** Все жилы (узлов и фоновые) в ячейках вокруг точки. */
+    public static List<Vein> veinsNear(long seed, double x, double z, int searchCells, boolean nether, TerrainProbe probe) {
+        int cx = Math.floorDiv((int) Math.floor(x), CELL);
+        int cz = Math.floorDiv((int) Math.floor(z), CELL);
+        List<Vein> found = new ArrayList<>();
+        for (int dx = -searchCells; dx <= searchCells; dx++) {
+            for (int dz = -searchCells; dz <= searchCells; dz++) {
+                found.addAll(nodeOfCell(seed, cx + dx, cz + dz, nether, probe).allVeins());
+            }
+        }
+        return found;
+    }
+
+    /** Мелкие жилы одного минерала по всей ячейке, независимо от узла. */
+    private static List<Vein> scatterVeins(CellKey key, TerrainProbe probe) {
+        RandomSource r = new XoroshiroRandomSource(mix(mix(key.seed() ^ 0x5CA77E4L ^ key.cellX()) ^ key.cellZ()));
+        int count = SCATTER_MIN + r.nextInt(SCATTER_VAR);
+        List<Vein> out = new ArrayList<>(count);
+        List<double[]> patches = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            Type type = SCATTER.get(r.nextInt(SCATTER.size()));
+            double a = 8 + r.nextDouble() * 8;       // длина 16-32
+            double b = 5 + r.nextDouble() * 5;
+            double c = 1.5 + r.nextDouble() * 1.5;   // толщина 3-6
+            double reach = Math.max(a, Math.max(b, c)) + 1;
+
+            double vx = 0, vy = 0, vz = 0;
+            boolean ok = false;
+            for (int attempt = 0; attempt < 8 && !ok; attempt++) {
+                vx = key.cellX() * (double) CELL + r.nextDouble() * CELL;
+                vz = key.cellZ() * (double) CELL + r.nextDouble() * CELL;
+                vy = type.yMin() + r.nextDouble() * (type.yMax() - type.yMin());
+                ok = probe.isSolid(Mth.floor(vx), Mth.floor(vy), Mth.floor(vz)) && !overlaps(out, vx, vy, vz, reach);
+            }
+            if (!ok) continue;
+
+            boolean mark = r.nextFloat() < SCATTER_SURFACE_CHANCE;
+            if (mark) {
+                for (double[] q : patches) {
+                    if (Math.hypot(q[0] - vx, q[1] - vz) < SURFACE_MIN_SPACING) {
+                        mark = false;
+                        break;
+                    }
+                }
+            }
+            if (mark) patches.add(new double[] {vx, vz});
+
+            double theta = r.nextDouble() * Math.PI;
+            double dip = Math.toRadians(40 + r.nextDouble() * 40);
+            double cs = Math.cos(theta), sn = Math.sin(theta);
+            double cd = Math.cos(dip), sd = Math.sin(dip);
+            out.add(new Vein(r.nextLong(), vx, vy, vz, a, b, c,
+                    cs, sn,
+                    -sn * cd, -sd, cs * cd,
+                    sn * sd, -cd, -cs * sd,
+                    type.mix(), mark));
+        }
+        return List.copyOf(out);
+    }
+
     private static Node generate(CellKey key, TerrainProbe probe) {
         long salt = key.nether() ? 0x4E45544845524CL : 0L;
         RandomSource r = new XoroshiroRandomSource(mix(mix(key.seed() ^ key.cellX()) ^ key.cellZ()) ^ salt);
+        List<Vein> scatter = key.nether() ? List.of() : scatterVeins(key, probe);
 
         Kind kind;
         if (key.nether()) {
-            if (r.nextFloat() > NETHER_NODE_CHANCE) return Node.NONE;
+            if (r.nextFloat() > NETHER_NODE_CHANCE) return new Node(0, 0, 0, Kind.HYDROTHERMAL, List.of(), scatter);
             kind = Kind.NETHER;
         } else {
-            if (r.nextFloat() > NODE_CHANCE) return Node.NONE;
+            if (r.nextFloat() > NODE_CHANCE) return new Node(0, 0, 0, Kind.HYDROTHERMAL, List.of(), scatter);
             kind = r.nextFloat() < LAYERED_SHARE ? Kind.LAYERED : Kind.HYDROTHERMAL;
         }
 
@@ -304,7 +385,7 @@ public final class OreNodes {
                     type.mix(),
                     mark));
         }
-        return new Node(nodeX, nodeZ, radius, kind, List.copyOf(out));
+        return new Node(nodeX, nodeZ, radius, kind, List.copyOf(out), scatter);
     }
 
     private static boolean overlaps(List<Vein> placed, double x, double y, double z, double reach) {
