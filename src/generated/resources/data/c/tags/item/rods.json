@@ -3,6 +3,8 @@
     "#c:rods/iron",
     "#c:rods/copper",
     "#c:rods/tin",
+    "#c:rods/nickel",
+    "#c:rods/zinc",
     "#c:rods/gold",
     "#c:rods/bronze",
     "#c:rods/steel"

@@ -3,6 +3,8 @@
     "#c:gears/iron",
     "#c:gears/copper",
     "#c:gears/tin",
+    "#c:gears/nickel",
+    "#c:gears/zinc",
     "#c:gears/bronze",
     "#c:gears/steel"
   ]

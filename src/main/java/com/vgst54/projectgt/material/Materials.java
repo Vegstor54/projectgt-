@@ -32,6 +32,10 @@ public final class Materials {
             .withVanillaRaw(() -> Items.RAW_COPPER));
     public static final Material TIN    = add(Material.of("tin",    "Tin",    0xB4BDC9,
             RAW_ORE, DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
+    public static final Material NICKEL = add(Material.of("nickel", "Nickel", 0xC6C9C6,
+            DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
+    public static final Material ZINC   = add(Material.of("zinc",   "Zinc",   0xA8B5B8,
+            DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING));
 
     // --- Золото: руды нет (пока), мягкое, только заготовки. ---
     public static final Material GOLD   = add(Material.of("gold",   "Gold",   0xFFDF3A,

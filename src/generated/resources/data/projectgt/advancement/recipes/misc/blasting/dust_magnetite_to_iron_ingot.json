@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_magnetite_dust": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#c:dusts/magnetite"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "projectgt:blasting/dust_magnetite_to_iron_ingot"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_magnetite_dust"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "projectgt:blasting/dust_magnetite_to_iron_ingot"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_pyrite_dust": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#c:dusts/pyrite"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "projectgt:smelting/dust_pyrite_to_iron_ingot"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_pyrite_dust"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "projectgt:smelting/dust_pyrite_to_iron_ingot"
+    ]
+  }
+}

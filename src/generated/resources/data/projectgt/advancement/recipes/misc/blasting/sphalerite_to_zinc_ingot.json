@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_sphalerite_raw_ore": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#c:raw_materials/sphalerite"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "projectgt:blasting/sphalerite_to_zinc_ingot"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_sphalerite_raw_ore"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "projectgt:blasting/sphalerite_to_zinc_ingot"
+    ]
+  }
+}

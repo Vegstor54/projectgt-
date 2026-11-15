@@ -3,6 +3,8 @@
     "#c:double_plates/iron",
     "#c:double_plates/copper",
     "#c:double_plates/tin",
+    "#c:double_plates/nickel",
+    "#c:double_plates/zinc",
     "#c:double_plates/gold",
     "#c:double_plates/bronze",
     "#c:double_plates/steel"

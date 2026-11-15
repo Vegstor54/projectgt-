@@ -156,7 +156,7 @@ public final class DataGenerators {
     /**
      * Плавка сырой руды в слитки: печь (200 тиков) и плавильная печь (100 тиков).
      * Это простая переплавка для начальных стадий; для высоких стадий будет отдельная продвинутая переработка.
-     * Минералы без своего слитка в моде (свинец, цинк, серебро и т.д.) пока не плавятся.
+    * Минералы без своего слитка в моде (свинец, серебро и т.д.) пока не плавятся.
      * Сюда же входит сырьё алмаза, угля и графита (графит даёт пыль).
      * Ванадиевый магнетит тоже не плавится: его надо сначала разделить (для получения ванадия), это будет в продвинутой переработке.
      */
@@ -172,6 +172,8 @@ public final class DataGenerators {
             Supplier<ItemLike> copper = () -> Items.COPPER_INGOT;
             Supplier<ItemLike> gold = () -> Items.GOLD_INGOT;
             Supplier<ItemLike> tin = () -> ModItems.get(Materials.TIN, MaterialForm.INGOT).get();
+            Supplier<ItemLike> nickel = () -> ModItems.get(Materials.NICKEL, MaterialForm.INGOT).get();
+            Supplier<ItemLike> zinc = () -> ModItems.get(Materials.ZINC, MaterialForm.INGOT).get();
             Supplier<ItemLike> diamond = () -> Items.DIAMOND;
             Supplier<ItemLike> coal = () -> Items.COAL;
             Supplier<ItemLike> graphiteDust = () -> ModItems.get(Materials.GRAPHITE, MaterialForm.DUST).get();
@@ -189,6 +191,9 @@ public final class DataGenerators {
             table.put(Materials.CASSITERITE, new SmeltingOutput(tin, 1));
             table.put(Materials.TIN, new SmeltingOutput(tin, 1));    // сырая оловянная руда самого олова
             table.put(Materials.NATIVE_GOLD, new SmeltingOutput(gold, 1));
+            // Никель и цинк
+            table.put(Materials.PENTLANDITE, new SmeltingOutput(nickel, 1));
+            table.put(Materials.SPHALERITE, new SmeltingOutput(zinc, 1));
             // Алмаз, уголь, графит (графит плавится в пыль)
             table.put(Materials.DIAMOND, new SmeltingOutput(diamond, 1));
             table.put(Materials.COAL, new SmeltingOutput(coal, 2));
@@ -196,22 +201,49 @@ public final class DataGenerators {
             return table;
         }
 
+        private static Map<Material, SmeltingOutput> dustSmeltingTable() {
+            Map<Material, SmeltingOutput> table = new LinkedHashMap<>(smeltingTable());
+            table.remove(Materials.COAL);
+            table.remove(Materials.GRAPHITE);
+            table.put(Materials.IRON, new SmeltingOutput(() -> Items.IRON_INGOT, 1));
+            table.put(Materials.COPPER, new SmeltingOutput(() -> Items.COPPER_INGOT, 1));
+            table.put(Materials.GOLD, new SmeltingOutput(() -> Items.GOLD_INGOT, 1));
+            table.put(Materials.BRONZE, new SmeltingOutput(
+                    () -> ModItems.get(Materials.BRONZE, MaterialForm.INGOT).get(), 1));
+                table.put(Materials.NICKEL, new SmeltingOutput(
+                    () -> ModItems.get(Materials.NICKEL, MaterialForm.INGOT).get(), 1));
+                table.put(Materials.ZINC, new SmeltingOutput(
+                    () -> ModItems.get(Materials.ZINC, MaterialForm.INGOT).get(), 1));
+            return table;
+        }
+
+        private static void addCookingRecipes(RecipeOutput output, Ingredient input, net.minecraft.tags.TagKey<Item> inputTag,
+                                              ItemStack result, String trigger, String name) {
+            SimpleCookingRecipeBuilder.smelting(input, RecipeCategory.MISC, result, 0.7f, 200)
+                    .unlockedBy(trigger, has(inputTag))
+                    .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "smelting/" + name));
+            SimpleCookingRecipeBuilder.blasting(input, RecipeCategory.MISC, result, 0.7f, 100)
+                    .unlockedBy(trigger, has(inputTag))
+                    .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "blasting/" + name));
+            }
+
         @Override
         protected void buildRecipes(RecipeOutput output) {
             smeltingTable().forEach((material, result) -> {
                 ItemLike out = result.item().get();
                 ItemStack resultStack = new ItemStack(out.asItem(), result.count());
                 var rawTag = MaterialForm.RAW_ORE.tag(material);
-                Ingredient raw = Ingredient.of(rawTag);
                 String name = material.id() + "_to_" + BuiltInRegistries.ITEM.getKey(out.asItem()).getPath();
-                String trigger = "has_" + material.id() + "_raw_ore";
+                addCookingRecipes(output, Ingredient.of(rawTag), rawTag, resultStack,
+                        "has_" + material.id() + "_raw_ore", name);
+            });
 
-                SimpleCookingRecipeBuilder.smelting(raw, RecipeCategory.MISC, resultStack, 0.7f, 200)
-                        .unlockedBy(trigger, has(rawTag))
-                        .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "smelting/" + name));
-                SimpleCookingRecipeBuilder.blasting(raw, RecipeCategory.MISC, resultStack, 0.7f, 100)
-                        .unlockedBy(trigger, has(rawTag))
-                        .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "blasting/" + name));
+            dustSmeltingTable().forEach((material, result) -> {
+                ItemLike out = result.item().get();
+                var dustTag = MaterialForm.DUST.tag(material);
+                String name = "dust_" + material.id() + "_to_" + BuiltInRegistries.ITEM.getKey(out.asItem()).getPath();
+                addCookingRecipes(output, Ingredient.of(dustTag), dustTag,
+                        new ItemStack(out.asItem(), result.count()), "has_" + material.id() + "_dust", name);
             });
         }
     }

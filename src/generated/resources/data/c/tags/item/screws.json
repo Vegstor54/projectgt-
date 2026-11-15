@@ -3,6 +3,8 @@
     "#c:screws/iron",
     "#c:screws/copper",
     "#c:screws/tin",
+    "#c:screws/nickel",
+    "#c:screws/zinc",
     "#c:screws/bronze",
     "#c:screws/steel"
   ]

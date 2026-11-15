@@ -3,6 +3,8 @@
     "#c:plates/iron",
     "#c:plates/copper",
     "#c:plates/tin",
+    "#c:plates/nickel",
+    "#c:plates/zinc",
     "#c:plates/gold",
     "#c:plates/bronze",
     "#c:plates/steel"

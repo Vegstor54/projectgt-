@@ -3,6 +3,8 @@
     "#c:small_springs/iron",
     "#c:small_springs/copper",
     "#c:small_springs/tin",
+    "#c:small_springs/nickel",
+    "#c:small_springs/zinc",
     "#c:small_springs/bronze",
     "#c:small_springs/steel"
   ]
