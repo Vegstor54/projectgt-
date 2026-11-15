@@ -66,9 +66,9 @@ public final class OreNodes {
     private static final List<Type> OVERWORLD = List.of(
             // Гидротермальные (крутые жилы)
             new Type(-48, 16, STEEP, 10, Mix.of(
-                    p(Materials.CASSITERITE, 65), p(Materials.WOLFRAMITE, 25), p(Materials.PYRITE, 10))),
+                    p(Materials.MAGNETITE, 65), p(Materials.VANADIUM_MAGNETITE, 25), p(Materials.NATIVE_GOLD, 10))),
             new Type(-32, 24, STEEP, 12, Mix.of(
-                    p(Materials.CHALCOPYRITE, 60), p(Materials.PYRITE, 25), p(Materials.NATIVE_GOLD, 10), p(Materials.MALACHITE, 5))),
+                    p(Materials.CHALCOPYRITE, 60), p(Materials.PYRITE, 25), p(Materials.MALACHITE, 5))),
             new Type(16, 56, STEEP, 5, Mix.of(      // окисленная медь у поверхности
                     p(Materials.MALACHITE, 55), p(Materials.CHALCOPYRITE, 30), p(Materials.NATIVE_GOLD, 10), p(Materials.PYRITE, 5))),
             new Type(-16, 56, STEEP, 12, Mix.of(
