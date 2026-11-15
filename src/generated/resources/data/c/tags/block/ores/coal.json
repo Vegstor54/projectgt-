@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_coal_ore",
+    "projectgt:deepslate_coal_ore",
+    "projectgt:granite_coal_ore",
+    "projectgt:diorite_coal_ore",
+    "projectgt:andesite_coal_ore",
+    "projectgt:tuff_coal_ore",
+    "projectgt:netherrack_coal_ore",
+    "projectgt:blackstone_coal_ore",
+    "projectgt:end_stone_coal_ore"
+  ]
+}

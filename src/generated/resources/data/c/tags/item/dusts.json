@@ -27,6 +27,9 @@
     "#c:dusts/vanadium_magnetite",
     "#c:dusts/sapphire",
     "#c:dusts/sulfur",
-    "#c:dusts/quartz"
+    "#c:dusts/zeolite",
+    "#c:dusts/realgar",
+    "#c:dusts/quartz",
+    "#c:dusts/coal"
   ]
 }

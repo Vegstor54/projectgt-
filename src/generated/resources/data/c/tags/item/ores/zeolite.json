@@ -1,0 +1,13 @@
+{
+  "values": [
+    "projectgt:stone_zeolite_ore",
+    "projectgt:deepslate_zeolite_ore",
+    "projectgt:granite_zeolite_ore",
+    "projectgt:diorite_zeolite_ore",
+    "projectgt:andesite_zeolite_ore",
+    "projectgt:tuff_zeolite_ore",
+    "projectgt:netherrack_zeolite_ore",
+    "projectgt:blackstone_zeolite_ore",
+    "projectgt:end_stone_zeolite_ore"
+  ]
+}

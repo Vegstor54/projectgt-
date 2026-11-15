@@ -25,6 +25,9 @@
     "#c:ores/vanadium_magnetite",
     "#c:ores/sapphire",
     "#c:ores/sulfur",
-    "#c:ores/quartz"
+    "#c:ores/zeolite",
+    "#c:ores/realgar",
+    "#c:ores/quartz",
+    "#c:ores/coal"
   ]
 }
