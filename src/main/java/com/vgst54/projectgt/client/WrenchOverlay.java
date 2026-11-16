@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.vgst54.projectgt.item.WrenchItem;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.FluidPipeBlockEntity;
+import com.vgst54.projectgt.pipe.ItemPipeBlock;
 import com.vgst54.projectgt.pipe.PipeWrenchGrid;
 
 import net.minecraft.client.Minecraft;
@@ -56,11 +57,13 @@ public final class WrenchOverlay {
         BlockHitResult hit = event.getTarget();
         BlockPos pos = hit.getBlockPos();
         BlockState state = mc.level.getBlockState(pos);
-        if (!(state.getBlock() instanceof FluidPipeBlock)) {
+        boolean fluidPipe = state.getBlock() instanceof FluidPipeBlock;
+        if (!fluidPipe && !(state.getBlock() instanceof ItemPipeBlock)) {
             return;
         }
 
-        boolean arrowMode = mc.player.isShiftKeyDown();
+        // Стрелки (выходы) есть только у жидкостных труб.
+        boolean arrowMode = fluidPipe && mc.player.isShiftKeyDown();
         int flowMask = mc.level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipeEntity ? pipeEntity.flowMask() : 0;
 
         Direction hitFace = hit.getDirection();

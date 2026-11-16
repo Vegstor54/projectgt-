@@ -59,6 +59,7 @@ public final class ModCreativeTabs {
                     .displayItems((params, output) -> {
                         output.accept(ModItems.WRENCH.get());
                         ModBlocks.fluidPipes().forEach(pipe -> output.accept(pipe.item().get()));
+                        ModBlocks.itemPipes().forEach(pipe -> output.accept(pipe.item().get()));
                     })
                     .build());
 

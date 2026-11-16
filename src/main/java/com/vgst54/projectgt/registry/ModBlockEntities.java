@@ -2,6 +2,7 @@ package com.vgst54.projectgt.registry;
 
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.pipe.FluidPipeBlockEntity;
+import com.vgst54.projectgt.pipe.ItemPipeBlockEntity;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.Block;
@@ -18,6 +19,13 @@ public final class ModBlockEntities {
             TYPES.register("fluid_pipe", () -> BlockEntityType.Builder.of(
                     FluidPipeBlockEntity::new,
                     ModBlocks.fluidPipes().map(pipe -> (Block) pipe.block().get()).toArray(Block[]::new)
+            ).build(null));
+
+    /** Одна блок-сущность на все предметные трубы. */
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ItemPipeBlockEntity>> ITEM_PIPE =
+            TYPES.register("item_pipe", () -> BlockEntityType.Builder.of(
+                    ItemPipeBlockEntity::new,
+                    ModBlocks.itemPipes().map(pipe -> (Block) pipe.block().get()).toArray(Block[]::new)
             ).build(null));
 
     private ModBlockEntities() {}

@@ -61,6 +61,20 @@ public class ProjectGTClient {
                 pipe.item().get()));
     }
 
+    @SubscribeEvent
+    static void onItemPipeBlockColors(RegisterColorHandlersEvent.Block event) {
+        ModBlocks.itemPipes().forEach(pipe -> event.register(
+                (state, level, pos, tintIndex) -> tintIndex == 0 ? pipe.type().material().tint() : -1,
+                pipe.block().get()));
+    }
+
+    @SubscribeEvent
+    static void onItemPipeItemColors(RegisterColorHandlersEvent.Item event) {
+        ModBlocks.itemPipes().forEach(pipe -> event.register(
+                (stack, tintIndex) -> tintIndex == 0 ? pipe.type().material().tint() : -1,
+                pipe.item().get()));
+    }
+
     // Все предметы материалов используют одну серую текстуру на форму; цвет задаём тонировкой слоя 0.
     // Сырая руда красится в цвет руды, остальные формы в цвет металла.
     @SubscribeEvent
