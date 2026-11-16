@@ -35,8 +35,8 @@ public final class WrenchOverlay {
         if (mc.player == null || mc.level == null) {
             return;
         }
-        if (!(mc.player.getMainHandItem().getItem() instanceof WrenchItem)
-                && !(mc.player.getOffhandItem().getItem() instanceof WrenchItem)) {
+        // Только главная рука: именно с ней труба целится как полный блок (см. FluidPipeBlock.getShape).
+        if (!(mc.player.getMainHandItem().getItem() instanceof WrenchItem)) {
             return;
         }
         BlockHitResult hit = event.getTarget();
