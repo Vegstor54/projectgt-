@@ -1,11 +1,13 @@
 package com.vgst54.projectgt.datagen;
 
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.material.Heat;
@@ -13,10 +15,12 @@ import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.material.Materials;
 import com.vgst54.projectgt.material.OreTags;
+import com.vgst54.projectgt.pipe.PipeSize;
 import com.vgst54.projectgt.registry.ModBlocks;
 import com.vgst54.projectgt.registry.ModCreativeTabs;
 import com.vgst54.projectgt.registry.ModItems;
 
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
@@ -37,6 +41,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.PipeBlock;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -80,6 +85,7 @@ public final class DataGenerators {
         protected void registerModels() {
             ModItems.byMaterial().forEach(entry -> entry.getValue().forEach((form, item) ->
                     withExistingParent(item.getId().getPath(), "item/generated").texture("layer0", form.texture(entry.getKey()))));
+            withExistingParent(ModItems.WRENCH.getId().getPath(), "item/handheld").texture("layer0", modLoc("item/wrench"));
         }
     }
 
@@ -110,6 +116,57 @@ public final class DataGenerators {
                 simpleBlock(block, model);
                 simpleBlockItem(block, model);
             });
+            registerPipes();
+        }
+
+        /**
+         * Трубы: ядро + «руки» по сторонам (multipart). Руку делаем смотрящей на север и поворачиваем.
+         * Одна серая текстура block/pipe, цвет материала даёт тонировка (tintindex 0).
+         * Модели ядра, руки и инвентарная общие для всех материалов одного размера.
+         */
+        private void registerPipes() {
+            var texture = modLoc("block/pipe");
+            Map<PipeSize, ModelFile> cores = new EnumMap<>(PipeSize.class);
+            Map<PipeSize, ModelFile> arms = new EnumMap<>(PipeSize.class);
+            Map<PipeSize, ModelFile> inventory = new EnumMap<>(PipeSize.class);
+            for (PipeSize size : PipeSize.values()) {
+                float lo = 8 - size.thickness() / 2.0f;
+                float hi = 8 + size.thickness() / 2.0f;
+                cores.put(size, pipeBox("pipe/core_" + size.id(), texture, lo, lo, lo, hi, hi, hi));
+                arms.put(size, pipeBox("pipe/arm_" + size.id(), texture, lo, lo, 0, hi, hi, lo));
+                inventory.put(size, pipeBox("pipe/inventory_" + size.id(), texture, lo, lo, 0, hi, hi, 16));
+            }
+            ModBlocks.fluidPipes().forEach(pipe -> {
+                PipeSize size = pipe.type().size();
+                Block block = pipe.block().get();
+                var builder = getMultipartBuilder(block);
+                builder.part().modelFile(cores.get(size)).addModel().end();
+                for (Direction dir : Direction.values()) {
+                    builder.part().modelFile(arms.get(size))
+                            .rotationX(dir == Direction.DOWN ? 90 : dir == Direction.UP ? 270 : 0)
+                            .rotationY(switch (dir) {
+                                case EAST -> 90;
+                                case SOUTH -> 180;
+                                case WEST -> 270;
+                                default -> 0;
+                            })
+                            .addModel()
+                            .condition(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), true)
+                            .end();
+                }
+                simpleBlockItem(block, inventory.get(size));
+            });
+        }
+
+        private ModelFile pipeBox(String name, net.minecraft.resources.ResourceLocation texture,
+                                  float x1, float y1, float z1, float x2, float y2, float z2) {
+            var model = models().getBuilder(name)
+                    .parent(new ModelFile.UncheckedModelFile("minecraft:block/block"))
+                    .texture("particle", texture)
+                    .texture("pipe", texture);
+            model.element().from(x1, y1, z1).to(x2, y2, z2)
+                    .allFaces((dir, face) -> face.texture("#pipe").tintindex(0)).end();
+            return model;
         }
     }
 
@@ -124,11 +181,14 @@ public final class DataGenerators {
                 Block block = ore.block().get();
                 add(block, createOreDrop(block, ModItems.rawOre(ore.material())));
             });
+            ModBlocks.fluidPipes().forEach(pipe -> dropSelf(pipe.block().get()));
         }
 
         @Override
         protected Iterable<Block> getKnownBlocks() {
-            return ModBlocks.ores().map(ore -> ore.block().get()).toList();
+            return Stream.concat(
+                    ModBlocks.ores().map(ore -> ore.block().get()),
+                    ModBlocks.fluidPipes().map(pipe -> (Block) pipe.block().get())).toList();
         }
     }
 
@@ -141,6 +201,16 @@ public final class DataGenerators {
         protected void addTranslations() {
             add(ModCreativeTabs.MATERIALS_TITLE_KEY, "Project-GT+++ Materials");
             add(ModCreativeTabs.ORES_TITLE_KEY, "Project-GT+++ Ores");
+            add(ModCreativeTabs.PIPES_TITLE_KEY, "Project-GT+++ Pipes");
+
+            // Трубы и ключ
+            addItem(ModItems.WRENCH, "Wrench");
+            add("tooltip.projectgt.pipe.throughput", "Throughput: %s L/s");
+            add("tooltip.projectgt.pipe.heat_limit", "Heat limit: %s K");
+            add("message.projectgt.pipe.side_enabled", "Side %s: enabled");
+            add("message.projectgt.pipe.side_disabled", "Side %s: disabled");
+            add("message.projectgt.pipe.flow_set", "Flow direction: %s");
+            add("message.projectgt.pipe.flow_cleared", "Flow direction cleared");
 
             // Экран настроек (ключи: <modid>.configuration.<путь опции>)
             add("projectgt.configuration.title", "Project-GT+++ Configs");
@@ -152,6 +222,7 @@ public final class DataGenerators {
             ModItems.byMaterial().forEach(entry -> entry.getValue().forEach((form, item) ->
                     addItem(item, form.displayName(entry.getKey()))));
             ModBlocks.ores().forEach(ore -> addBlock(ore.block(), ore.displayName()));
+            ModBlocks.fluidPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
         }
     }
 
@@ -291,6 +362,7 @@ public final class DataGenerators {
                 tag(BlockTags.NEEDS_STONE_TOOL).add(block);
                 tag(OreTags.block(ore.material())).add(block);
             });
+            ModBlocks.fluidPipes().forEach(pipe -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(pipe.block().get()));
             for (Material material : Materials.all()) {
                 if (material.hasOre()) {
                     tag(OreTags.ALL_BLOCKS).addTag(OreTags.block(material));

@@ -9,10 +9,15 @@ import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.block.StoneType;
 import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.Materials;
+import com.vgst54.projectgt.pipe.FluidPipeBlock;
+import com.vgst54.projectgt.pipe.FluidPipeMaterials;
+import com.vgst54.projectgt.pipe.FluidPipeType;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -27,7 +32,11 @@ public final class ModBlocks {
         }
     }
 
+    /** Жидкостная труба: вид (материал × размер), блок и предмет-блок. */
+    public record FluidPipe(FluidPipeType type, DeferredBlock<FluidPipeBlock> block, DeferredItem<BlockItem> item) {}
+
     private static final List<OreBlock> ORES = new ArrayList<>();
+    private static final List<FluidPipe> FLUID_PIPES = new ArrayList<>();
 
     static {
         for (Material material : Materials.all()) {
@@ -46,10 +55,29 @@ public final class ModBlocks {
         }
     }
 
+    static {
+        for (FluidPipeType type : FluidPipeMaterials.all()) {
+            DeferredBlock<FluidPipeBlock> block = BLOCKS.register(type.id(), () -> new FluidPipeBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.METAL)
+                            .strength(2.0f, 6.0f)
+                            .sound(SoundType.METAL)
+                            .noOcclusion(),
+                    type));
+            DeferredItem<BlockItem> item = ModItems.ITEMS.registerSimpleBlockItem(type.id(), block);
+            FLUID_PIPES.add(new FluidPipe(type, block, item));
+        }
+    }
+
     private ModBlocks() {}
 
     /** Все блоки руды в порядке: материал, затем тип камня. */
     public static Stream<OreBlock> ores() {
         return Collections.unmodifiableList(ORES).stream();
+    }
+
+    /** Все жидкостные трубы в порядке: материал, затем размер. */
+    public static Stream<FluidPipe> fluidPipes() {
+        return Collections.unmodifiableList(FLUID_PIPES).stream();
     }
 }
