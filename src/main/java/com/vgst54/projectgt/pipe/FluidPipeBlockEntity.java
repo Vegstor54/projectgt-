@@ -92,15 +92,22 @@ public class FluidPipeBlockEntity extends BlockEntity {
         syncToClient();
     }
 
-    /** Переключает сторону: открытая закрывается (вместе со стрелкой), закрытая открывается. Возвращает true, если теперь открыта. */
-    public boolean toggleSide(Direction side) {
+    /** Явно открывает или закрывает сторону; закрытие снимает и стрелку. */
+    public void setSideOpen(Direction side, boolean open) {
         int bit = 1 << side.ordinal();
-        openMask ^= bit;
-        if (!isOpen(side)) {
+        if (open) {
+            openMask |= bit;
+        } else {
+            openMask &= ~bit;
             flowMask &= ~bit;   // у закрытой стороны стрелки быть не может
         }
         setChanged();
         syncToClient();
+    }
+
+    /** Переключает сторону: открытая закрывается (вместе со стрелкой), закрытая открывается. Возвращает true, если теперь открыта. */
+    public boolean toggleSide(Direction side) {
+        setSideOpen(side, !isOpen(side));
         return isOpen(side);
     }
 
