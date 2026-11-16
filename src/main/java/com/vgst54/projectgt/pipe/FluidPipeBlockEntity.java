@@ -42,11 +42,13 @@ public class FluidPipeBlockEntity extends BlockEntity {
 
     private final FluidPipeType type;
     private final FluidTank tank;
-    /** Биты по Direction.ordinal(): 1 значит сторона выключена ключом. */
-    private int disabledMask;
-    /** Биты по Direction.ordinal(): 1 значит рука торчит в эту сторону даже без соседа («в никуда»). */
-    private int forcedMask;
-    /** Биты по Direction.ordinal(): 1 значит на этой стороне стоит стрелка (выход). 0 значит стрелок нет. */
+    /**
+     * Биты по Direction.ordinal(): 1 значит сторона открыта (рука торчит, труба обменивается жидкостью
+     * с тем, что там стоит, а если там пусто, то «в никуда»). Автоматически стороны не открываются:
+     * только ключом или при установке трубы с shift к блоку, на который ставят.
+     */
+    private int openMask;
+    /** Биты по Direction.ordinal(): 1 значит на этой стороне стоит стрелка (выход). Стрелка только на открытой стороне. */
     private int flowMask;
     private boolean overheated;
     /** Сдвиг, чтобы трубы не раздавали все в один и тот же тик. */
@@ -75,36 +77,31 @@ public class FluidPipeBlockEntity extends BlockEntity {
 
     // --- Стороны и направление ---
 
-    public int disabledMask() {
-        return disabledMask;
+    public int openMask() {
+        return openMask;
     }
 
-    public boolean isSideDisabled(Direction side) {
-        return (disabledMask & (1 << side.ordinal())) != 0;
+    public boolean isOpen(Direction side) {
+        return (openMask & (1 << side.ordinal())) != 0;
     }
 
-    public int forcedMask() {
-        return forcedMask;
+    /** Открывает сторону (если уже открыта, ничего не меняет). */
+    public void openSide(Direction side) {
+        openMask |= 1 << side.ordinal();
+        setChanged();
+        syncToClient();
     }
 
-    /**
-     * Переключает сторону по тому, торчит ли сейчас рука (extended).
-     * Торчит: выключаем сторону, даже если там сосед. Не торчит: включаем, рука торчит даже в пустоту.
-     * Возвращает true, если сторона теперь включена.
-     */
-    public boolean toggleSide(Direction side, boolean extended) {
+    /** Переключает сторону: открытая закрывается (вместе со стрелкой), закрытая открывается. Возвращает true, если теперь открыта. */
+    public boolean toggleSide(Direction side) {
         int bit = 1 << side.ordinal();
-        if (extended) {
-            disabledMask |= bit;
-            forcedMask &= ~bit;
-            flowMask &= ~bit;   // у выключенной стороны стрелки быть не может
-        } else {
-            disabledMask &= ~bit;
-            forcedMask |= bit;
+        openMask ^= bit;
+        if (!isOpen(side)) {
+            flowMask &= ~bit;   // у закрытой стороны стрелки быть не может
         }
         setChanged();
         syncToClient();
-        return !extended;
+        return isOpen(side);
     }
 
     public int flowMask() {
@@ -115,10 +112,10 @@ public class FluidPipeBlockEntity extends BlockEntity {
         return (flowMask & (1 << side.ordinal())) != 0;
     }
 
-    /** Ставит или снимает стрелку на стороне. Возвращает true, если стрелка теперь стоит. */
+    /** Ставит или снимает стрелку на стороне. Стрелка открывает сторону. Возвращает true, если стрелка теперь стоит. */
     public boolean toggleArrow(Direction side) {
         int bit = 1 << side.ordinal();
-        disabledMask &= ~bit;   // стрелка на выключенной стороне включает её обратно
+        openMask |= bit;
         flowMask ^= bit;
         setChanged();
         syncToClient();
@@ -132,10 +129,10 @@ public class FluidPipeBlockEntity extends BlockEntity {
         }
     }
 
-    /** Обработчик жидкости для соседей. Выключенная сторона ничего не отдаёт и не принимает. */
+    /** Обработчик жидкости для соседей. Закрытая сторона ничего не отдаёт и не принимает. */
     @Nullable
     public IFluidHandler handler(@Nullable Direction side) {
-        if (side != null && isSideDisabled(side)) {
+        if (side != null && !isOpen(side)) {
             return null;
         }
         return handlers[side == null ? 6 : side.ordinal()];
@@ -166,7 +163,7 @@ public class FluidPipeBlockEntity extends BlockEntity {
         List<Target> targets = new ArrayList<>();
         long totalSpace = 0;
         for (Direction dir : Direction.values()) {
-            if (isSideDisabled(dir) || (flowMask != 0 && !hasArrow(dir))) {
+            if (!isOpen(dir) || (flowMask != 0 && !hasArrow(dir))) {
                 continue;
             }
             IFluidHandler neighbor = level.getCapability(
@@ -247,8 +244,7 @@ public class FluidPipeBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.put("Tank", tank.writeToNBT(registries, new CompoundTag()));
-        tag.putInt("DisabledMask", disabledMask);
-        tag.putInt("ForcedMask", forcedMask);
+        tag.putInt("OpenMask", openMask);
         tag.putInt("FlowMask", flowMask);
     }
 
@@ -267,8 +263,7 @@ public class FluidPipeBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         tank.readFromNBT(registries, tag.getCompound("Tank"));
-        disabledMask = tag.getInt("DisabledMask");
-        forcedMask = tag.getInt("ForcedMask");
+        openMask = tag.getInt("OpenMask");
         flowMask = tag.getInt("FlowMask");
     }
 
