@@ -6,6 +6,7 @@ import javax.annotation.Nullable;
 
 import com.vgst54.projectgt.item.WrenchItem;
 import com.vgst54.projectgt.registry.ModBlockEntities;
+import com.vgst54.projectgt.registry.ModItems;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -86,8 +87,25 @@ public class FluidPipeBlock extends Block implements EntityBlock {
         }
     }
 
+    /**
+     * Контур и цель наведения. С ключом в руке труба «целится» как полный блок, чтобы сетка 3×3
+     * была доступна на всей грани, а не только там, где торчит тонкая труба.
+     */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        if (context.isHoldingItem(ModItems.WRENCH.get())) {
+            return Shapes.block();
+        }
+        return pipeShape(state);
+    }
+
+    /** Коллизия всегда настоящая, по форме трубы (ключ на неё не влияет). */
+    @Override
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return pipeShape(state);
+    }
+
+    private VoxelShape pipeShape(BlockState state) {
         int mask = 0;
         for (Direction dir : Direction.values()) {
             if (state.getValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir))) {
