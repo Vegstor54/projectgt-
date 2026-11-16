@@ -1,6 +1,8 @@
 package com.vgst54.projectgt.pipe;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -28,6 +30,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -40,6 +43,15 @@ import net.neoforged.neoforge.capabilities.Capabilities;
  * выключенные стороны и направление потока лежат в FluidPipeBlockEntity.
  */
 public class FluidPipeBlock extends Block implements EntityBlock {
+    /** Стрелка (выход) на стороне: только для модели, настоящее состояние лежит в блок-сущности (flowMask). */
+    public static final Map<Direction, BooleanProperty> ARROW = new EnumMap<>(Direction.class);
+
+    static {
+        for (Direction dir : Direction.values()) {
+            ARROW.put(dir, BooleanProperty.create("arrow_" + dir.getName()));
+        }
+    }
+
     private final FluidPipeType type;
     /** Формы по маске соединений (6 бит, порядок Direction.values()). */
     private final VoxelShape[] shapes = new VoxelShape[64];
@@ -51,6 +63,7 @@ public class FluidPipeBlock extends Block implements EntityBlock {
         BlockState state = stateDefinition.any();
         for (Direction dir : Direction.values()) {
             state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), false);
+            state = state.setValue(ARROW.get(dir), false);
         }
         registerDefaultState(state);
 
@@ -84,6 +97,7 @@ public class FluidPipeBlock extends Block implements EntityBlock {
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         for (Direction dir : Direction.values()) {
             builder.add(PipeBlock.PROPERTY_BY_DIRECTION.get(dir));
+            builder.add(ARROW.get(dir));
         }
     }
 
@@ -124,9 +138,11 @@ public class FluidPipeBlock extends Block implements EntityBlock {
     private BlockState computeState(Level level, BlockPos pos) {
         int disabled = 0;
         int forced = 0;
+        int arrows = 0;
         if (level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipe) {
             disabled = pipe.disabledMask();
             forced = pipe.forcedMask();
+            arrows = pipe.flowMask();
         }
         BlockState state = defaultBlockState();
         for (Direction dir : Direction.values()) {
@@ -135,6 +151,7 @@ public class FluidPipeBlock extends Block implements EntityBlock {
                     && ((forced & bit) != 0
                     || level.getCapability(Capabilities.FluidHandler.BLOCK, pos.relative(dir), dir.getOpposite()) != null);
             state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), connected);
+            state = state.setValue(ARROW.get(dir), (arrows & bit) != 0);
         }
         return state;
     }
@@ -173,6 +190,10 @@ public class FluidPipeBlock extends Block implements EntityBlock {
                 boolean arrow = pipe.toggleArrow(side);
                 player.displayClientMessage(Component.translatable(
                         arrow ? "message.projectgt.pipe.arrow_on" : "message.projectgt.pipe.arrow_off", sideName), true);
+                BlockState withArrows = computeState(level, pos);
+                if (withArrows != state) {
+                    level.setBlock(pos, withArrows, Block.UPDATE_ALL);
+                }
             } else {
                 boolean extended = state.getValue(PipeBlock.PROPERTY_BY_DIRECTION.get(side));
                 boolean enabled = pipe.toggleSide(side, extended);
