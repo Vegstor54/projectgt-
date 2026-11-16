@@ -179,9 +179,10 @@ public final class DataGenerators {
 
         /**
          * Мини-стрелка на северную сторону: светло-серая 2D-стрелка (block/pipe_arrow) на конце трубы,
-         * на верхней и нижней грани, острие на север. Размер зависит от толщины трубы (2..4 пикселя),
-         * стрелки разных сторон лежат у своих краёв блока и не налезают друг на друга.
-         * Повороты граней подобраны под UV-раскладку ванили: верх 0, низ 180.
+         * на всех четырёх гранях трубы вокруг оси (верх, низ, восток, запад), острие на север.
+         * Размер зависит от толщины трубы (2..4 пикселя), стрелки разных сторон лежат у своих краёв блока
+         * и не налезают друг на друга. Повороты граней подобраны под UV-раскладку ванили:
+         * верх 0, низ 180, восток 90, запад 270.
          */
         private ModelFile pipeArrow(String name, PipeSize size) {
             float t = size.thickness();
@@ -199,6 +200,8 @@ public final class DataGenerators {
                     .texture("arrow", modLoc("block/pipe_arrow"));
             decal(model, Direction.UP, x1, hi + e, z1, x2, hi + e, z2, ModelBuilder.FaceRotation.ZERO);
             decal(model, Direction.DOWN, x1, lo - e, z1, x2, lo - e, z2, ModelBuilder.FaceRotation.UPSIDE_DOWN);
+            decal(model, Direction.EAST, hi + e, x1, z1, hi + e, x2, z2, ModelBuilder.FaceRotation.CLOCKWISE_90);
+            decal(model, Direction.WEST, lo - e, x1, z1, lo - e, x2, z2, ModelBuilder.FaceRotation.COUNTERCLOCKWISE_90);
             model.renderType("minecraft:cutout");
             return model;
         }
