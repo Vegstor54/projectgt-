@@ -224,6 +224,13 @@ public class FluidPipeBlock extends Block implements EntityBlock {
                         arrow ? "message.projectgt.pipe.arrow_on" : "message.projectgt.pipe.arrow_off", sideName), true);
             } else {
                 boolean open = pipe.toggleSide(side);
+                // Рядом труба: одним кликом соединяем (или разъединяем) обе трубы, как в GT.
+                BlockPos neighborPos = pos.relative(side);
+                if (level.getBlockEntity(neighborPos) instanceof FluidPipeBlockEntity other
+                        && level.getBlockState(neighborPos).getBlock() instanceof FluidPipeBlock otherBlock) {
+                    other.setSideOpen(side.getOpposite(), open);
+                    otherBlock.refreshState(level, neighborPos);
+                }
                 player.displayClientMessage(Component.translatable(
                         open ? "message.projectgt.pipe.side_enabled" : "message.projectgt.pipe.side_disabled",
                         sideName), true);
