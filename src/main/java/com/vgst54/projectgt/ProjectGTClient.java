@@ -1,5 +1,6 @@
 package com.vgst54.projectgt;
 
+import com.vgst54.projectgt.client.WrenchOverlay;
 import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.registry.ModBlocks;
@@ -11,6 +12,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.neoforged.neoforge.client.event.RenderHighlightEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
@@ -36,6 +38,12 @@ public class ProjectGTClient {
         ModBlocks.ores().forEach(ore -> event.register(
                 (stack, tintIndex) -> tintIndex == 0 ? ore.material().oreTint() : -1,
                 ore.item().get()));
+    }
+
+    // Сетка 3x3 ключа на грани трубы (только с ключом в руке).
+    @SubscribeEvent
+    static void onBlockHighlight(RenderHighlightEvent.Block event) {
+        WrenchOverlay.render(event);
     }
 
     // Трубы: единая серая текстура, цвет материала задаём тонировкой (tintindex 0).

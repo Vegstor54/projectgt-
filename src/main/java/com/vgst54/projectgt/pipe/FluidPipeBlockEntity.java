@@ -39,6 +39,8 @@ public class FluidPipeBlockEntity extends BlockEntity {
     private final FluidTank tank;
     /** Биты по Direction.ordinal(): 1 значит сторона выключена ключом. */
     private int disabledMask;
+    /** Биты по Direction.ordinal(): 1 значит рука торчит в эту сторону даже без соседа («в никуда»). */
+    private int forcedMask;
     @Nullable
     private Direction flow;
     private boolean overheated;
@@ -76,11 +78,26 @@ public class FluidPipeBlockEntity extends BlockEntity {
         return (disabledMask & (1 << side.ordinal())) != 0;
     }
 
-    /** Переключает сторону. Возвращает true, если сторона теперь включена. */
-    public boolean toggleSide(Direction side) {
-        disabledMask ^= 1 << side.ordinal();
+    public int forcedMask() {
+        return forcedMask;
+    }
+
+    /**
+     * Переключает сторону по тому, торчит ли сейчас рука (extended).
+     * Торчит: выключаем сторону, даже если там сосед. Не торчит: включаем, рука торчит даже в пустоту.
+     * Возвращает true, если сторона теперь включена.
+     */
+    public boolean toggleSide(Direction side, boolean extended) {
+        int bit = 1 << side.ordinal();
+        if (extended) {
+            disabledMask |= bit;
+            forcedMask &= ~bit;
+        } else {
+            disabledMask &= ~bit;
+            forcedMask |= bit;
+        }
         setChanged();
-        return !isSideDisabled(side);
+        return !extended;
     }
 
     @Nullable
@@ -210,6 +227,7 @@ public class FluidPipeBlockEntity extends BlockEntity {
         super.saveAdditional(tag, registries);
         tag.put("Tank", tank.writeToNBT(registries, new CompoundTag()));
         tag.putInt("DisabledMask", disabledMask);
+        tag.putInt("ForcedMask", forcedMask);
         tag.putInt("Flow", flow == null ? -1 : flow.ordinal());
     }
 
@@ -218,6 +236,7 @@ public class FluidPipeBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         tank.readFromNBT(registries, tag.getCompound("Tank"));
         disabledMask = tag.getInt("DisabledMask");
+        forcedMask = tag.getInt("ForcedMask");
         int flowIndex = tag.getInt("Flow");
         flow = flowIndex >= 0 && flowIndex < Direction.values().length ? Direction.values()[flowIndex] : null;
     }

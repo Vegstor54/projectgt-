@@ -99,13 +99,23 @@ public class FluidPipeBlock extends Block implements EntityBlock {
 
     // --- Соединения ---
 
-    /** Состояние с «руками» к тем соседям, куда труба может отдавать и откуда принимать жидкость. */
+    /**
+     * Состояние с «руками». Рука торчит, если сторона не выключена ключом и либо там есть сосед
+     * с жидкостью, либо сторону открыли ключом вручную (тогда рука торчит и в пустоту).
+     */
     private BlockState computeState(Level level, BlockPos pos) {
-        int disabled = level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipe ? pipe.disabledMask() : 0;
+        int disabled = 0;
+        int forced = 0;
+        if (level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipe) {
+            disabled = pipe.disabledMask();
+            forced = pipe.forcedMask();
+        }
         BlockState state = defaultBlockState();
         for (Direction dir : Direction.values()) {
-            boolean connected = (disabled & (1 << dir.ordinal())) == 0
-                    && level.getCapability(Capabilities.FluidHandler.BLOCK, pos.relative(dir), dir.getOpposite()) != null;
+            int bit = 1 << dir.ordinal();
+            boolean connected = (disabled & bit) == 0
+                    && ((forced & bit) != 0
+                    || level.getCapability(Capabilities.FluidHandler.BLOCK, pos.relative(dir), dir.getOpposite()) != null);
             state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), connected);
         }
         return state;
@@ -138,7 +148,9 @@ public class FluidPipeBlock extends Block implements EntityBlock {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipe) {
-            Direction side = targetSide(pos, hit);
+            Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
+            Direction side = PipeWrenchGrid.directionAt(
+                    hit.getDirection(), local.x, local.y, local.z, type.size().halfWidth());
             Component sideName = Component.literal(side.getName());
             if (player.isShiftKeyDown()) {
                 pipe.toggleFlow(side);
@@ -146,7 +158,8 @@ public class FluidPipeBlock extends Block implements EntityBlock {
                         ? Component.translatable("message.projectgt.pipe.flow_cleared")
                         : Component.translatable("message.projectgt.pipe.flow_set", sideName), true);
             } else {
-                boolean enabled = pipe.toggleSide(side);
+                boolean extended = state.getValue(PipeBlock.PROPERTY_BY_DIRECTION.get(side));
+                boolean enabled = pipe.toggleSide(side, extended);
                 player.displayClientMessage(Component.translatable(
                         enabled ? "message.projectgt.pipe.side_enabled" : "message.projectgt.pipe.side_disabled",
                         sideName), true);
@@ -157,31 +170,6 @@ public class FluidPipeBlock extends Block implements EntityBlock {
             }
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
-    }
-
-    /**
-     * Какую сторону имел в виду игрок. Если кликнули по «руке» (точка за пределами ядра),
-     * это сторона руки, иначе та грань, по которой попали.
-     */
-    private Direction targetSide(BlockPos pos, BlockHitResult hit) {
-        double half = type.size().halfWidth();
-        Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
-        double eps = 1.0E-4;
-        for (Direction dir : Direction.values()) {
-            double component = switch (dir.getAxis()) {
-                case X -> local.x;
-                case Y -> local.y;
-                case Z -> local.z;
-            };
-            if (dir.getAxisDirection() == Direction.AxisDirection.POSITIVE) {
-                if (component > 0.5 + half + eps) {
-                    return dir;
-                }
-            } else if (component < 0.5 - half - eps) {
-                return dir;
-            }
-        }
-        return hit.getDirection();
     }
 
     // --- Блок-сущность ---
