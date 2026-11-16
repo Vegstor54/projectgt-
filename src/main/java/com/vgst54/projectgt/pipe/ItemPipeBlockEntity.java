@@ -49,6 +49,8 @@ public class ItemPipeBlockEntity extends BlockEntity {
     private final int[] origins;
     /** Биты по Direction.ordinal(): 1 значит сторона открыта. Автоматически не открывается. */
     private int openMask;
+    /** Режим restrictive: routing value трубы ×100, путь через неё становится «последним выбором». */
+    private boolean restrictive;
     private final int phase;
     /** Обработчики по сторонам; последний (индекс 6) для side == null. */
     private final SideHandler[] handlers = new SideHandler[7];
@@ -107,6 +109,23 @@ public class ItemPipeBlockEntity extends BlockEntity {
     public boolean toggleSide(Direction side) {
         setSideOpen(side, !isOpen(side));
         return isOpen(side);
+    }
+
+    public boolean isRestrictive() {
+        return restrictive;
+    }
+
+    /** Включает или выключает режим restrictive. Возвращает true, если теперь включён. */
+    public boolean toggleRestrictive() {
+        restrictive = !restrictive;
+        setChanged();
+        syncToClient();
+        return restrictive;
+    }
+
+    /** Сколько эта труба вносит в цену пути. */
+    public long routingValue() {
+        return (long) type.baseRoutingValue() * (restrictive ? ItemPipeType.RESTRICTIVE_MULTIPLIER : 1);
     }
 
     /** Клиенту нужны открытые стороны для оверлея ключа. */
@@ -191,7 +210,7 @@ public class ItemPipeBlockEntity extends BlockEntity {
         Set<BlockPos> done = new HashSet<>();
         PriorityQueue<Node> queue = new PriorityQueue<>(Comparator.comparingLong(Node::cost));
 
-        long startCost = type.routingValue();
+        long startCost = routingValue();
         best.put(worldPosition, startCost);
         queue.add(new Node(worldPosition, startCost));
 
@@ -215,7 +234,7 @@ public class ItemPipeBlockEntity extends BlockEntity {
                     if (!other.isOpen(dir.getOpposite())) {
                         continue;
                     }
-                    long cost = node.cost() + other.type.routingValue();
+                    long cost = node.cost() + other.routingValue();
                     if (cost < best.getOrDefault(neighborPos, Long.MAX_VALUE)) {
                         best.put(neighborPos, cost);
                         queue.add(new Node(neighborPos, cost));
@@ -241,6 +260,7 @@ public class ItemPipeBlockEntity extends BlockEntity {
         tag.put("Inventory", inventory.serializeNBT(registries));
         tag.putIntArray("Origins", origins);
         tag.putInt("OpenMask", openMask);
+        tag.putBoolean("Restrictive", restrictive);
     }
 
     @Override
@@ -252,6 +272,7 @@ public class ItemPipeBlockEntity extends BlockEntity {
             origins[i] = i < saved.length ? saved[i] : -1;
         }
         openMask = tag.getInt("OpenMask");
+        restrictive = tag.getBoolean("Restrictive");
     }
 
     @Override

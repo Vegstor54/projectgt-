@@ -5,24 +5,20 @@ import java.util.Locale;
 import com.vgst54.projectgt.material.Material;
 
 /**
- * Один вид предметной трубы: материал × размер × (обычная или restrictive).
+ * Один вид предметной трубы: материал × размер.
  * Пропускная способность: stacks стаков за periodSeconds секунд (1/8 стака/с это stacks = 1, periodSeconds = 8).
- * Внутренняя ёмкость равна stacks слотов. routingValue труба вносит в приоритет пути; у restrictive ×100.
+ * Внутренняя ёмкость равна stacks слотов. baseRoutingValue труба вносит в приоритет пути;
+ * в режиме restrictive (включается ключом с shift) он умножается на RESTRICTIVE_MULTIPLIER.
  */
-public record ItemPipeType(Material material, PipeSize size, int stacks, int periodSeconds,
-                           int baseRoutingValue, boolean restrictive) {
+public record ItemPipeType(Material material, PipeSize size, int stacks, int periodSeconds, int baseRoutingValue) {
     public static final int RESTRICTIVE_MULTIPLIER = 100;
 
     public String id() {
-        return material.id() + "_" + size.id() + (restrictive ? "_restrictive" : "") + "_item_pipe";
+        return material.id() + "_" + size.id() + "_item_pipe";
     }
 
     public String displayName() {
-        return size.displayName() + " " + (restrictive ? "Restrictive " : "") + material.displayName() + " Item Pipe";
-    }
-
-    public int routingValue() {
-        return restrictive ? baseRoutingValue * RESTRICTIVE_MULTIPLIER : baseRoutingValue;
+        return size.displayName() + " " + material.displayName() + " Item Pipe";
     }
 
     /** Как часто труба раздаёт содержимое. */
@@ -35,7 +31,8 @@ public record ItemPipeType(Material material, PipeSize size, int stacks, int per
         return periodSeconds == 1 ? String.valueOf(stacks) : stacks + "/" + periodSeconds;
     }
 
+    /** Routing value без restrictive, с разделителями тысяч. */
     public String routingValueText() {
-        return String.format(Locale.ROOT, "%,d", routingValue());
+        return String.format(Locale.ROOT, "%,d", baseRoutingValue);
     }
 }

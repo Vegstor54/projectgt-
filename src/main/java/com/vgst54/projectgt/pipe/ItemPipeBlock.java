@@ -29,6 +29,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -42,6 +43,9 @@ import net.neoforged.neoforge.capabilities.Capabilities;
  * на который ставят; дальше стороны открывает ключ (клик по стороне рядом с трубой соединяет обе).
  */
 public class ItemPipeBlock extends Block implements EntityBlock {
+    /** Режим restrictive (только для модели, настоящее значение в блок-сущности): стрелки на «руках». */
+    public static final BooleanProperty RESTRICTIVE = BooleanProperty.create("restrictive");
+
     private final ItemPipeType type;
     private final VoxelShape[] shapes;
 
@@ -52,7 +56,7 @@ public class ItemPipeBlock extends Block implements EntityBlock {
         for (Direction dir : Direction.values()) {
             state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), false);
         }
-        registerDefaultState(state);
+        registerDefaultState(state.setValue(RESTRICTIVE, false));
         this.shapes = PipeShapes.build(type.size().thickness());
     }
 
@@ -65,6 +69,7 @@ public class ItemPipeBlock extends Block implements EntityBlock {
         for (Direction dir : Direction.values()) {
             builder.add(PipeBlock.PROPERTY_BY_DIRECTION.get(dir));
         }
+        builder.add(RESTRICTIVE);
     }
 
     /** С ключом в руке труба целится как полный блок (сетка 3×3 на всей грани), без ключа настоящая форма. */
@@ -84,8 +89,13 @@ public class ItemPipeBlock extends Block implements EntityBlock {
     // --- Соединения ---
 
     private BlockState computeState(Level level, BlockPos pos) {
-        int open = level.getBlockEntity(pos) instanceof ItemPipeBlockEntity pipe ? pipe.openMask() : 0;
-        BlockState state = defaultBlockState();
+        int open = 0;
+        boolean restrictive = false;
+        if (level.getBlockEntity(pos) instanceof ItemPipeBlockEntity pipe) {
+            open = pipe.openMask();
+            restrictive = pipe.isRestrictive();
+        }
+        BlockState state = defaultBlockState().setValue(RESTRICTIVE, restrictive);
         for (Direction dir : Direction.values()) {
             state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), (open & (1 << dir.ordinal())) != 0);
         }
@@ -156,16 +166,23 @@ public class ItemPipeBlock extends Block implements EntityBlock {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof ItemPipeBlockEntity pipe) {
             Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
             Direction side = PipeWrenchGrid.directionAt(hit.getDirection(), local.x, local.y, local.z);
-            boolean open = pipe.toggleSide(side);
-            player.displayClientMessage(Component.translatable(
-                    open ? "message.projectgt.pipe.side_enabled" : "message.projectgt.pipe.side_disabled",
-                    Component.literal(side.getName())), true);
-            // Рядом труба: одним кликом соединяем (или разъединяем) обе трубы.
-            BlockPos neighborPos = pos.relative(side);
-            if (level.getBlockEntity(neighborPos) instanceof ItemPipeBlockEntity other
-                    && level.getBlockState(neighborPos).getBlock() instanceof ItemPipeBlock otherBlock) {
-                other.setSideOpen(side.getOpposite(), open);
-                otherBlock.refreshState(level, neighborPos);
+            if (player.isShiftKeyDown()) {
+                // Shift: режим restrictive (routing value ×100), на «руках» появляются стрелки.
+                boolean restrictive = pipe.toggleRestrictive();
+                player.displayClientMessage(Component.translatable(
+                        restrictive ? "message.projectgt.pipe.restrictive_on" : "message.projectgt.pipe.restrictive_off"), true);
+            } else {
+                boolean open = pipe.toggleSide(side);
+                player.displayClientMessage(Component.translatable(
+                        open ? "message.projectgt.pipe.side_enabled" : "message.projectgt.pipe.side_disabled",
+                        Component.literal(side.getName())), true);
+                // Рядом труба: одним кликом соединяем (или разъединяем) обе трубы.
+                BlockPos neighborPos = pos.relative(side);
+                if (level.getBlockEntity(neighborPos) instanceof ItemPipeBlockEntity other
+                        && level.getBlockState(neighborPos).getBlock() instanceof ItemPipeBlock otherBlock) {
+                    other.setSideOpen(side.getOpposite(), open);
+                    otherBlock.refreshState(level, neighborPos);
+                }
             }
             refreshState(level, pos);
         }
