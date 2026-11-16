@@ -1,0 +1,121 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "projectgt:pipe/core_tiny"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arm_tiny",
+        "x": 90
+      },
+      "when": {
+        "down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_tiny",
+        "x": 90
+      },
+      "when": {
+        "down": "true",
+        "restrictive_down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arm_tiny",
+        "x": 270
+      },
+      "when": {
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_tiny",
+        "x": 270
+      },
+      "when": {
+        "restrictive_up": "true",
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arm_tiny"
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_tiny"
+      },
+      "when": {
+        "north": "true",
+        "restrictive_north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arm_tiny",
+        "y": 180
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_tiny",
+        "y": 180
+      },
+      "when": {
+        "restrictive_south": "true",
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arm_tiny",
+        "y": 270
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_tiny",
+        "y": 270
+      },
+      "when": {
+        "restrictive_west": "true",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arm_tiny",
+        "y": 90
+      },
+      "when": {
+        "east": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_tiny",
+        "y": 90
+      },
+      "when": {
+        "east": "true",
+        "restrictive_east": "true"
+      }
+    }
+  ]
+}

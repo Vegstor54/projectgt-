@@ -49,6 +49,8 @@ public class ItemPipeBlockEntity extends BlockEntity {
     private final int[] origins;
     /** Биты по Direction.ordinal(): 1 значит сторона открыта. Автоматически не открывается. */
     private int openMask;
+    /** Биты по Direction.ordinal(): выход через эту сторону имеет routing value ×100. */
+    private int restrictiveMask;
     private final int phase;
     /** Обработчики по сторонам; последний (индекс 6) для side == null. */
     private final SideHandler[] handlers = new SideHandler[7];
@@ -77,6 +79,28 @@ public class ItemPipeBlockEntity extends BlockEntity {
         return type;
     }
 
+    public int restrictiveMask() {
+        return restrictiveMask;
+    }
+
+    public boolean hasRestrictive(Direction side) {
+        return (restrictiveMask & (1 << side.ordinal())) != 0;
+    }
+
+    public int routingValue(Direction outputSide) {
+        return type.routingValue() * (hasRestrictive(outputSide) ? ItemPipeType.RESTRICTIVE_MULTIPLIER : 1);
+    }
+
+    /** Переключает restrictive-маркер стороны; как у fluid arrow, сторона при этом открывается. */
+    public boolean toggleRestrictive(Direction side) {
+        int bit = 1 << side.ordinal();
+        openMask |= bit;
+        restrictiveMask ^= bit;
+        setChanged();
+        syncToClient();
+        return hasRestrictive(side);
+    }
+
     // --- Стороны ---
 
     public int openMask() {
@@ -93,6 +117,7 @@ public class ItemPipeBlockEntity extends BlockEntity {
             openMask |= bit;
         } else {
             openMask &= ~bit;
+            restrictiveMask &= ~bit;
         }
         setChanged();
         syncToClient();
@@ -191,9 +216,8 @@ public class ItemPipeBlockEntity extends BlockEntity {
         Set<BlockPos> done = new HashSet<>();
         PriorityQueue<Node> queue = new PriorityQueue<>(Comparator.comparingLong(Node::cost));
 
-        long startCost = type.routingValue();
-        best.put(worldPosition, startCost);
-        queue.add(new Node(worldPosition, startCost));
+        best.put(worldPosition, 0L);
+        queue.add(new Node(worldPosition, 0L));
 
         while (!queue.isEmpty() && done.size() < MAX_NODES) {
             Node node = queue.poll();
@@ -207,6 +231,7 @@ public class ItemPipeBlockEntity extends BlockEntity {
                 if (!pipe.isOpen(dir)) {
                     continue;
                 }
+                long pathCost = node.cost() + pipe.routingValue(dir);
                 BlockPos neighborPos = node.pos().relative(dir);
                 if (!level.isLoaded(neighborPos)) {
                     continue;
@@ -215,16 +240,15 @@ public class ItemPipeBlockEntity extends BlockEntity {
                     if (!other.isOpen(dir.getOpposite())) {
                         continue;
                     }
-                    long cost = node.cost() + other.type.routingValue();
-                    if (cost < best.getOrDefault(neighborPos, Long.MAX_VALUE)) {
-                        best.put(neighborPos, cost);
-                        queue.add(new Node(neighborPos, cost));
+                    if (pathCost < best.getOrDefault(neighborPos, Long.MAX_VALUE)) {
+                        best.put(neighborPos, pathCost);
+                        queue.add(new Node(neighborPos, pathCost));
                     }
                 } else {
                     IItemHandler handler = level.getCapability(
                             Capabilities.ItemHandler.BLOCK, neighborPos, dir.getOpposite());
                     if (handler != null) {
-                        destinations.add(new Destination(handler, node.cost(), node.pos(), dir));
+                        destinations.add(new Destination(handler, pathCost, node.pos(), dir));
                     }
                 }
             }
@@ -241,6 +265,7 @@ public class ItemPipeBlockEntity extends BlockEntity {
         tag.put("Inventory", inventory.serializeNBT(registries));
         tag.putIntArray("Origins", origins);
         tag.putInt("OpenMask", openMask);
+        tag.putInt("RestrictiveMask", restrictiveMask);
     }
 
     @Override
@@ -252,6 +277,9 @@ public class ItemPipeBlockEntity extends BlockEntity {
             origins[i] = i < saved.length ? saved[i] : -1;
         }
         openMask = tag.getInt("OpenMask");
+        restrictiveMask = tag.contains("RestrictiveMask")
+            ? tag.getInt("RestrictiveMask") & openMask
+            : tag.getBoolean("Restrictive") ? openMask : 0;
     }
 
     @Override

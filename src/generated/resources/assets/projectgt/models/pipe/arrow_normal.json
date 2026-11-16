@@ -1,0 +1,105 @@
+{
+  "parent": "minecraft:block/block",
+  "elements": [
+    {
+      "faces": {
+        "up": {
+          "texture": "#arrow",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
+        }
+      },
+      "from": [
+        6,
+        12.02,
+        0.5
+      ],
+      "to": [
+        10,
+        12.02,
+        4.5
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "rotation": 180,
+          "texture": "#arrow",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
+        }
+      },
+      "from": [
+        6,
+        3.98,
+        0.5
+      ],
+      "to": [
+        10,
+        3.98,
+        4.5
+      ]
+    },
+    {
+      "faces": {
+        "east": {
+          "rotation": 90,
+          "texture": "#arrow",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
+        }
+      },
+      "from": [
+        12.02,
+        6,
+        0.5
+      ],
+      "to": [
+        12.02,
+        10,
+        4.5
+      ]
+    },
+    {
+      "faces": {
+        "west": {
+          "rotation": 270,
+          "texture": "#arrow",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
+        }
+      },
+      "from": [
+        3.98,
+        6,
+        0.5
+      ],
+      "to": [
+        3.98,
+        10,
+        4.5
+      ]
+    }
+  ],
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "arrow": "projectgt:block/pipe_arrow",
+    "particle": "projectgt:block/pipe"
+  }
+}

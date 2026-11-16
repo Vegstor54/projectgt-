@@ -1,6 +1,8 @@
 package com.vgst54.projectgt.pipe;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -29,6 +31,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -42,6 +45,14 @@ import net.neoforged.neoforge.capabilities.Capabilities;
  * на который ставят; дальше стороны открывает ключ (клик по стороне рядом с трубой соединяет обе).
  */
 public class ItemPipeBlock extends Block implements EntityBlock {
+    public static final Map<Direction, BooleanProperty> RESTRICTIVE = new EnumMap<>(Direction.class);
+
+    static {
+        for (Direction dir : Direction.values()) {
+            RESTRICTIVE.put(dir, BooleanProperty.create("restrictive_" + dir.getName()));
+        }
+    }
+
     private final ItemPipeType type;
     private final VoxelShape[] shapes;
 
@@ -51,6 +62,7 @@ public class ItemPipeBlock extends Block implements EntityBlock {
         BlockState state = stateDefinition.any();
         for (Direction dir : Direction.values()) {
             state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), false);
+            state = state.setValue(RESTRICTIVE.get(dir), false);
         }
         registerDefaultState(state);
         this.shapes = PipeShapes.build(type.size().thickness());
@@ -64,6 +76,7 @@ public class ItemPipeBlock extends Block implements EntityBlock {
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         for (Direction dir : Direction.values()) {
             builder.add(PipeBlock.PROPERTY_BY_DIRECTION.get(dir));
+            builder.add(RESTRICTIVE.get(dir));
         }
     }
 
@@ -84,10 +97,13 @@ public class ItemPipeBlock extends Block implements EntityBlock {
     // --- Соединения ---
 
     private BlockState computeState(Level level, BlockPos pos) {
-        int open = level.getBlockEntity(pos) instanceof ItemPipeBlockEntity pipe ? pipe.openMask() : 0;
+        ItemPipeBlockEntity pipe = level.getBlockEntity(pos) instanceof ItemPipeBlockEntity itemPipe ? itemPipe : null;
+        int open = pipe == null ? 0 : pipe.openMask();
+        int restrictive = pipe == null ? 0 : pipe.restrictiveMask();
         BlockState state = defaultBlockState();
         for (Direction dir : Direction.values()) {
             state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), (open & (1 << dir.ordinal())) != 0);
+            state = state.setValue(RESTRICTIVE.get(dir), (restrictive & (1 << dir.ordinal())) != 0);
         }
         return state;
     }
@@ -156,11 +172,20 @@ public class ItemPipeBlock extends Block implements EntityBlock {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof ItemPipeBlockEntity pipe) {
             Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
             Direction side = PipeWrenchGrid.directionAt(hit.getDirection(), local.x, local.y, local.z);
-            boolean open = pipe.toggleSide(side);
-            player.displayClientMessage(Component.translatable(
-                    open ? "message.projectgt.pipe.side_enabled" : "message.projectgt.pipe.side_disabled",
-                    Component.literal(side.getName())), true);
-            // Рядом труба: одним кликом соединяем (или разъединяем) обе трубы.
+            boolean open;
+            if (player.isShiftKeyDown()) {
+                boolean restrictive = pipe.toggleRestrictive(side);
+                open = true;
+                player.displayClientMessage(Component.translatable(
+                        restrictive ? "message.projectgt.item_pipe.restrictive_on" : "message.projectgt.item_pipe.restrictive_off",
+                        Component.literal(side.getName())), true);
+            } else {
+                open = pipe.toggleSide(side);
+                player.displayClientMessage(Component.translatable(
+                        open ? "message.projectgt.pipe.side_enabled" : "message.projectgt.pipe.side_disabled",
+                        Component.literal(side.getName())), true);
+            }
+            // Соседняя труба зеркально открывает или закрывает соединение.
             BlockPos neighborPos = pos.relative(side);
             if (level.getBlockEntity(neighborPos) instanceof ItemPipeBlockEntity other
                     && level.getBlockState(neighborPos).getBlock() instanceof ItemPipeBlock otherBlock) {

@@ -10,7 +10,7 @@ import com.vgst54.projectgt.material.Materials;
 /**
  * Материалы предметных труб (значения из таблицы GTNH). Для каждого размера (Tiny..Huge) задаётся
  * пропускная способность stacks за period секунд и routing value; null значит «такого размера нет».
- * Каждый вид выпускается в двух вариантах: обычная и restrictive (routing value ×100).
+ * Restrictive-модификатор является режимом трубы, поэтому регистрируется один вид на размер.
  *
  * Остальные материалы из таблицы (Brass, Electrum, Cobalt, Aluminium, PVC, Platinum, Bedrockium, Osmium,
  * Quantium, Fluxed Electrum, Black Plutonium) добавим вместе с самими материалами в Materials.
@@ -44,10 +44,7 @@ public final class ItemPipeMaterials {
             if (spec == null) {
                 continue;
             }
-            for (boolean restrictive : new boolean[]{false, true}) {
-                TYPES.add(new ItemPipeType(material, sizes[i], spec.stacks(), spec.periodSeconds(),
-                        spec.routingValue(), restrictive));
-            }
+            TYPES.add(new ItemPipeType(material, sizes[i], spec.stacks(), spec.periodSeconds(), spec.routingValue()));
         }
     }
 

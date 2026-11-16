@@ -38,7 +38,7 @@ public final class ModBlocks {
     /** Жидкостная труба: вид (материал × размер), блок и предмет-блок. */
     public record FluidPipe(FluidPipeType type, DeferredBlock<FluidPipeBlock> block, DeferredItem<BlockItem> item) {}
 
-    /** Предметная труба: вид (материал × размер × restrictive), блок и предмет-блок. */
+    /** Предметная труба: вид (материал × размер), блок и предмет-блок. */
     public record ItemPipe(ItemPipeType type, DeferredBlock<ItemPipeBlock> block, DeferredItem<BlockItem> item) {}
 
     private static final List<ItemPipe> ITEM_PIPES = new ArrayList<>();
@@ -97,7 +97,7 @@ public final class ModBlocks {
         return Collections.unmodifiableList(ORES).stream();
     }
 
-    /** Все предметные трубы в порядке: материал, размер, обычная и restrictive. */
+    /** Все предметные трубы в порядке: материал, размер. */
     public static Stream<ItemPipe> itemPipes() {
         return Collections.unmodifiableList(ITEM_PIPES).stream();
     }

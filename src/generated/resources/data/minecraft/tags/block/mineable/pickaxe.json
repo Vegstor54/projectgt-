@@ -302,6 +302,14 @@
     "projectgt:steel_small_fluid_pipe",
     "projectgt:steel_normal_fluid_pipe",
     "projectgt:steel_large_fluid_pipe",
-    "projectgt:steel_huge_fluid_pipe"
+    "projectgt:steel_huge_fluid_pipe",
+    "projectgt:tin_tiny_item_pipe",
+    "projectgt:tin_small_item_pipe",
+    "projectgt:tin_normal_item_pipe",
+    "projectgt:tin_large_item_pipe",
+    "projectgt:tin_huge_item_pipe",
+    "projectgt:nickel_normal_item_pipe",
+    "projectgt:nickel_large_item_pipe",
+    "projectgt:nickel_huge_item_pipe"
   ]
 }

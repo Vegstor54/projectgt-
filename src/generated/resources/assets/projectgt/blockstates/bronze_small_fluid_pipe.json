@@ -57,6 +57,59 @@
       "when": {
         "east": "true"
       }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_small",
+        "x": 90
+      },
+      "when": {
+        "arrow_down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_small",
+        "x": 270
+      },
+      "when": {
+        "arrow_up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_small"
+      },
+      "when": {
+        "arrow_north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_small",
+        "y": 180
+      },
+      "when": {
+        "arrow_south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_small",
+        "y": 270
+      },
+      "when": {
+        "arrow_west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "projectgt:pipe/arrow_small",
+        "y": 90
+      },
+      "when": {
+        "arrow_east": "true"
+      }
     }
   ]
 }

@@ -6,6 +6,7 @@ import com.vgst54.projectgt.item.WrenchItem;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.FluidPipeBlockEntity;
 import com.vgst54.projectgt.pipe.ItemPipeBlock;
+import com.vgst54.projectgt.pipe.ItemPipeBlockEntity;
 import com.vgst54.projectgt.pipe.PipeWrenchGrid;
 
 import net.minecraft.client.Minecraft;
@@ -62,9 +63,13 @@ public final class WrenchOverlay {
             return;
         }
 
-        // Стрелки (выходы) есть только у жидкостных труб.
-        boolean arrowMode = fluidPipe && mc.player.isShiftKeyDown();
-        int flowMask = mc.level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipeEntity ? pipeEntity.flowMask() : 0;
+        boolean arrowMode = mc.player.isShiftKeyDown();
+        int flowMask = 0;
+        if (mc.level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipeEntity) {
+            flowMask = pipeEntity.flowMask();
+        } else if (mc.level.getBlockEntity(pos) instanceof ItemPipeBlockEntity pipeEntity) {
+            flowMask = pipeEntity.restrictiveMask();
+        }
 
         Direction hitFace = hit.getDirection();
         Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());

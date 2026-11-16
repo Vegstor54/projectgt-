@@ -16,6 +16,7 @@ import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.material.Materials;
 import com.vgst54.projectgt.material.OreTags;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
+import com.vgst54.projectgt.pipe.ItemPipeBlock;
 import com.vgst54.projectgt.pipe.PipeSize;
 import com.vgst54.projectgt.registry.ModBlocks;
 import com.vgst54.projectgt.registry.ModCreativeTabs;
@@ -176,7 +177,7 @@ public final class DataGenerators {
                 simpleBlockItem(block, inventory.get(size));
             });
 
-            // Предметные трубы: ядро + руки; у restrictive на конце каждой руки ещё и мини-стрелка.
+            // Предметные трубы: режим restrictive отображается стрелками на открытых руках.
             ModBlocks.itemPipes().forEach(pipe -> {
                 PipeSize size = pipe.type().size();
                 Block block = pipe.block().get();
@@ -192,10 +193,9 @@ public final class DataGenerators {
                     };
                     builder.part().modelFile(arms.get(size)).rotationX(rotX).rotationY(rotY).addModel()
                             .condition(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), true).end();
-                    if (pipe.type().restrictive()) {
-                        builder.part().modelFile(arrowModels.get(size)).rotationX(rotX).rotationY(rotY).addModel()
-                                .condition(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), true).end();
-                    }
+                    builder.part().modelFile(arrowModels.get(size)).rotationX(rotX).rotationY(rotY).addModel()
+                            .condition(ItemPipeBlock.RESTRICTIVE.get(dir), true)
+                            .condition(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), true).end();
                 }
                 simpleBlockItem(block, inventory.get(size));
             });
@@ -291,6 +291,8 @@ public final class DataGenerators {
             add("tooltip.projectgt.pipe.heat_limit", "Heat limit: %s K");
             add("tooltip.projectgt.item_pipe.throughput", "Throughput: %s stacks/s");
             add("tooltip.projectgt.item_pipe.routing_value", "Routing value: %s");
+            add("message.projectgt.item_pipe.restrictive_on", "Restrictive side %s: on");
+            add("message.projectgt.item_pipe.restrictive_off", "Restrictive side %s: off");
             add("message.projectgt.pipe.side_enabled", "Side %s: enabled");
             add("message.projectgt.pipe.side_disabled", "Side %s: disabled");
             add("message.projectgt.pipe.arrow_on", "Arrow %s: on");
