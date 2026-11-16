@@ -8,7 +8,7 @@ import net.minecraft.world.level.LevelReader;
 
 /**
  * Ключ. Сама логика живёт в блоках, которые умеют с ним работать (FluidPipeBlock):
- * ПКМ включает и выключает сторону, ПКМ с sneak задаёт направление потока.
+ * ПКМ включает и выключает сторону, ПКМ с sneak ставит или снимает стрелку (выход) на стороне.
  */
 public class WrenchItem extends Item {
     public WrenchItem(Properties properties) {

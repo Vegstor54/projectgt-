@@ -209,8 +209,8 @@ public final class DataGenerators {
             add("tooltip.projectgt.pipe.heat_limit", "Heat limit: %s K");
             add("message.projectgt.pipe.side_enabled", "Side %s: enabled");
             add("message.projectgt.pipe.side_disabled", "Side %s: disabled");
-            add("message.projectgt.pipe.flow_set", "Flow direction: %s");
-            add("message.projectgt.pipe.flow_cleared", "Flow direction cleared");
+            add("message.projectgt.pipe.arrow_on", "Arrow %s: on");
+            add("message.projectgt.pipe.arrow_off", "Arrow %s: off");
 
             // Экран настроек (ключи: <modid>.configuration.<путь опции>)
             add("projectgt.configuration.title", "Project-GT+++ Configs");

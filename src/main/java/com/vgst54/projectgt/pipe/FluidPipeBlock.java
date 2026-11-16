@@ -170,10 +170,9 @@ public class FluidPipeBlock extends Block implements EntityBlock {
             Direction side = PipeWrenchGrid.directionAt(hit.getDirection(), local.x, local.y, local.z);
             Component sideName = Component.literal(side.getName());
             if (player.isShiftKeyDown()) {
-                pipe.toggleFlow(side);
-                player.displayClientMessage(pipe.flow() == null
-                        ? Component.translatable("message.projectgt.pipe.flow_cleared")
-                        : Component.translatable("message.projectgt.pipe.flow_set", sideName), true);
+                boolean arrow = pipe.toggleArrow(side);
+                player.displayClientMessage(Component.translatable(
+                        arrow ? "message.projectgt.pipe.arrow_on" : "message.projectgt.pipe.arrow_off", sideName), true);
             } else {
                 boolean extended = state.getValue(PipeBlock.PROPERTY_BY_DIRECTION.get(side));
                 boolean enabled = pipe.toggleSide(side, extended);

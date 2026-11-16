@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.vgst54.projectgt.item.WrenchItem;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
+import com.vgst54.projectgt.pipe.FluidPipeBlockEntity;
 import com.vgst54.projectgt.pipe.PipeWrenchGrid;
 
 import net.minecraft.client.Minecraft;
@@ -21,7 +22,8 @@ import net.neoforged.neoforge.client.event.RenderHighlightEvent;
  * Центр переключает саму грань, боковые клетки соседние стороны, угловые обратную грань.
  * На грани под курсором сетка яркая, клетка под курсором подсвечена; на остальных пяти гранях
  * та же сетка рисуется приглушённой, чтобы было видно состояние всех сторон сразу.
- * Крестик в клетке значит, что рука в эту сторону торчит.
+ * Обычный режим: крестик в клетке значит, что рука в эту сторону торчит.
+ * С shift (режим стрелок): в клетках, где стоит стрелка (выход), рисуется стрелка; стрелок может быть до шести.
  * Раскладку клеток даёт PipeWrenchGrid, ту же, что использует клик на сервере.
  */
 public final class WrenchOverlay {
@@ -34,10 +36,10 @@ public final class WrenchOverlay {
             0.0, 0.5 - PipeWrenchGrid.CENTER_HALF, 0.5 + PipeWrenchGrid.CENTER_HALF, 1.0};
 
     /** Цвета: активная грань яркая, остальные обесцвеченные и полупрозрачные. */
-    private record Style(int[] grid, int[] cross) {}
+    private record Style(int[] grid, int[] cross, int[] arrow) {}
 
-    private static final Style ACTIVE = new Style(new int[]{230, 230, 230, 255}, new int[]{96, 255, 128, 255});
-    private static final Style DIM = new Style(new int[]{150, 150, 150, 90}, new int[]{125, 150, 130, 110});
+    private static final Style ACTIVE = new Style(new int[]{230, 230, 230, 255}, new int[]{96, 255, 128, 255}, new int[]{255, 160, 40, 255});
+    private static final Style DIM = new Style(new int[]{150, 150, 150, 90}, new int[]{125, 150, 130, 110}, new int[]{170, 135, 95, 110});
     private static final int[] HOVER = {255, 215, 64, 255};
 
     private WrenchOverlay() {}
@@ -58,6 +60,9 @@ public final class WrenchOverlay {
             return;
         }
 
+        boolean arrowMode = mc.player.isShiftKeyDown();
+        int flowMask = mc.level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipeEntity ? pipeEntity.flowMask() : 0;
+
         Direction hitFace = hit.getDirection();
         Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
         int hoverU = PipeWrenchGrid.band(PipeWrenchGrid.along(PipeWrenchGrid.tangentU(hitFace), local.x, local.y, local.z));
@@ -74,15 +79,15 @@ public final class WrenchOverlay {
         // Сначала приглушённые грани, потом яркая поверх.
         for (Direction face : Direction.values()) {
             if (face != hitFace) {
-                drawFace(lines, pose, state, face, DIM, false, 0, 0);
+                drawFace(lines, pose, state, face, DIM, arrowMode, flowMask, false, 0, 0);
             }
         }
-        drawFace(lines, pose, state, hitFace, ACTIVE, true, hoverU, hoverV);
+        drawFace(lines, pose, state, hitFace, ACTIVE, arrowMode, flowMask, true, hoverU, hoverV);
         poseStack.popPose();
     }
 
     private static void drawFace(VertexConsumer lines, PoseStack.Pose pose, BlockState state, Direction face,
-                                 Style style, boolean hover, int hoverU, int hoverV) {
+                                 Style style, boolean arrowMode, int flowMask, boolean hover, int hoverU, int hoverV) {
         // Сетка: рамка грани и линии по границам центральной клетки.
         rect(lines, pose, face, 0, 0, 1, 1, style.grid());
         for (int i = 1; i <= 2; i++) {
@@ -98,7 +103,11 @@ public final class WrenchOverlay {
                 double v1 = EDGES[j + 1];
                 Direction dir = PipeWrenchGrid.directionOf(face, i - 1, j - 1);
 
-                if (state.getValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir))) {
+                if (arrowMode) {
+                    if ((flowMask & (1 << dir.ordinal())) != 0) {
+                        arrow(lines, pose, face, dir, u0, v0, u1, v1, style.arrow());
+                    }
+                } else if (state.getValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir))) {
                     // Рука торчит в эту сторону: перечёркиваем клетку.
                     line(lines, pose, face, u0 + MARGIN, v0 + MARGIN, u1 - MARGIN, v1 - MARGIN, style.cross());
                     line(lines, pose, face, u0 + MARGIN, v1 - MARGIN, u1 - MARGIN, v0 + MARGIN, style.cross());
@@ -109,6 +118,48 @@ public final class WrenchOverlay {
                 }
             }
         }
+    }
+
+    /**
+     * Стрелка в клетке. Для сторон вдоль грани: стрелка в плоскости, указывает на ту сторону.
+     * Для сторон по нормали к грани (центр и углы): ромб, потому что стрелка смотрела бы в экран.
+     */
+    private static void arrow(VertexConsumer vc, PoseStack.Pose pose, Direction face, Direction dir,
+                              double u0, double v0, double u1, double v1, int[] rgba) {
+        double cu = (u0 + u1) / 2;
+        double cv = (v0 + v1) / 2;
+        double len = Math.min(u1 - u0, v1 - v0) * 0.35;
+
+        double du;
+        double dv;
+        if (dir == PipeWrenchGrid.tangentU(face)) {
+            du = 1;
+            dv = 0;
+        } else if (dir == PipeWrenchGrid.tangentU(face).getOpposite()) {
+            du = -1;
+            dv = 0;
+        } else if (dir == PipeWrenchGrid.tangentV(face)) {
+            du = 0;
+            dv = 1;
+        } else if (dir == PipeWrenchGrid.tangentV(face).getOpposite()) {
+            du = 0;
+            dv = -1;
+        } else {
+            line(vc, pose, face, cu - len, cv, cu, cv + len, rgba);
+            line(vc, pose, face, cu, cv + len, cu + len, cv, rgba);
+            line(vc, pose, face, cu + len, cv, cu, cv - len, rgba);
+            line(vc, pose, face, cu, cv - len, cu - len, cv, rgba);
+            return;
+        }
+        double tipU = cu + du * len;
+        double tipV = cv + dv * len;
+        double tailU = cu - du * len;
+        double tailV = cv - dv * len;
+        double baseU = tipU - du * len * 0.6;
+        double baseV = tipV - dv * len * 0.6;
+        line(vc, pose, face, tailU, tailV, tipU, tipV, rgba);
+        line(vc, pose, face, tipU, tipV, baseU - dv * len * 0.5, baseV + du * len * 0.5, rgba);
+        line(vc, pose, face, tipU, tipV, baseU + dv * len * 0.5, baseV - du * len * 0.5, rgba);
     }
 
     private static void rect(VertexConsumer vc, PoseStack.Pose pose, Direction face,
