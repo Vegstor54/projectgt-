@@ -1,0 +1,6 @@
+-proc:none
+-d
+/tmp/claude-0/-home-claude/09ffb1d9-c72b-5eab-810a-2e3c5a42d4f1/scratchpad/out
+src/main/java/com/vgst54/projectgt/client/WrenchOverlay.java
+src/main/java/com/vgst54/projectgt/pipe/FluidPipeBlock.java
+src/main/java/com/vgst54/projectgt/pipe/PipeWrenchGrid.java

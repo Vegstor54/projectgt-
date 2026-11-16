@@ -167,8 +167,7 @@ public class FluidPipeBlock extends Block implements EntityBlock {
         }
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipe) {
             Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
-            Direction side = PipeWrenchGrid.directionAt(
-                    hit.getDirection(), local.x, local.y, local.z, type.size().halfWidth());
+            Direction side = PipeWrenchGrid.directionAt(hit.getDirection(), local.x, local.y, local.z);
             Component sideName = Component.literal(side.getName());
             if (player.isShiftKeyDown()) {
                 pipe.toggleFlow(side);
