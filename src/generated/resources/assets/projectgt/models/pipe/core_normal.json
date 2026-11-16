@@ -1,0 +1,47 @@
+{
+  "parent": "minecraft:block/block",
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "texture": "#pipe",
+          "tintindex": 0
+        },
+        "east": {
+          "texture": "#pipe",
+          "tintindex": 0
+        },
+        "north": {
+          "texture": "#pipe",
+          "tintindex": 0
+        },
+        "south": {
+          "texture": "#pipe",
+          "tintindex": 0
+        },
+        "up": {
+          "texture": "#pipe",
+          "tintindex": 0
+        },
+        "west": {
+          "texture": "#pipe",
+          "tintindex": 0
+        }
+      },
+      "from": [
+        4,
+        4,
+        4
+      ],
+      "to": [
+        12,
+        12,
+        12
+      ]
+    }
+  ],
+  "textures": {
+    "particle": "projectgt:block/pipe",
+    "pipe": "projectgt:block/pipe"
+  }
+}

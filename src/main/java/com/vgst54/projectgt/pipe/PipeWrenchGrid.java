@@ -12,8 +12,8 @@ import net.minecraft.core.Direction;
  * по обеим осям грани. Остальное место отдано боковым и угловым клеткам, в них проще попасть.
  */
 public final class PipeWrenchGrid {
-    /** Половина стороны центральной клетки в долях блока (0.125 = 4 пикселя из 16). */
-    public static final double CENTER_HALF = 0.125;
+    /** Половина стороны центральной клетки в долях блока (0.250 = 4 пикселя из 16). */
+    public static final double CENTER_HALF = 0.250;
 
     private PipeWrenchGrid() {}
 
