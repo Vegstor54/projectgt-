@@ -175,6 +175,30 @@ public final class DataGenerators {
                 }
                 simpleBlockItem(block, inventory.get(size));
             });
+
+            // Предметные трубы: ядро + руки; у restrictive на конце каждой руки ещё и мини-стрелка.
+            ModBlocks.itemPipes().forEach(pipe -> {
+                PipeSize size = pipe.type().size();
+                Block block = pipe.block().get();
+                var builder = getMultipartBuilder(block);
+                builder.part().modelFile(cores.get(size)).addModel().end();
+                for (Direction dir : Direction.values()) {
+                    int rotX = dir == Direction.DOWN ? 90 : dir == Direction.UP ? 270 : 0;
+                    int rotY = switch (dir) {
+                        case EAST -> 90;
+                        case SOUTH -> 180;
+                        case WEST -> 270;
+                        default -> 0;
+                    };
+                    builder.part().modelFile(arms.get(size)).rotationX(rotX).rotationY(rotY).addModel()
+                            .condition(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), true).end();
+                    if (pipe.type().restrictive()) {
+                        builder.part().modelFile(arrowModels.get(size)).rotationX(rotX).rotationY(rotY).addModel()
+                                .condition(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), true).end();
+                    }
+                }
+                simpleBlockItem(block, inventory.get(size));
+            });
         }
 
         /**
@@ -237,13 +261,16 @@ public final class DataGenerators {
                 add(block, createOreDrop(block, ModItems.rawOre(ore.material())));
             });
             ModBlocks.fluidPipes().forEach(pipe -> dropSelf(pipe.block().get()));
+            ModBlocks.itemPipes().forEach(pipe -> dropSelf(pipe.block().get()));
         }
 
         @Override
         protected Iterable<Block> getKnownBlocks() {
-            return Stream.concat(
+            return Stream.of(
                     ModBlocks.ores().map(ore -> ore.block().get()),
-                    ModBlocks.fluidPipes().map(pipe -> (Block) pipe.block().get())).toList();
+                    ModBlocks.fluidPipes().map(pipe -> (Block) pipe.block().get()),
+                    ModBlocks.itemPipes().map(pipe -> (Block) pipe.block().get()))
+                    .flatMap(blocks -> blocks).toList();
         }
     }
 
@@ -262,6 +289,8 @@ public final class DataGenerators {
             addItem(ModItems.WRENCH, "Wrench");
             add("tooltip.projectgt.pipe.throughput", "Throughput: %s L/s");
             add("tooltip.projectgt.pipe.heat_limit", "Heat limit: %s K");
+            add("tooltip.projectgt.item_pipe.throughput", "Throughput: %s stacks/s");
+            add("tooltip.projectgt.item_pipe.routing_value", "Routing value: %s");
             add("message.projectgt.pipe.side_enabled", "Side %s: enabled");
             add("message.projectgt.pipe.side_disabled", "Side %s: disabled");
             add("message.projectgt.pipe.arrow_on", "Arrow %s: on");
@@ -278,6 +307,7 @@ public final class DataGenerators {
                     addItem(item, form.displayName(entry.getKey()))));
             ModBlocks.ores().forEach(ore -> addBlock(ore.block(), ore.displayName()));
             ModBlocks.fluidPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
+            ModBlocks.itemPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
         }
     }
 
@@ -418,6 +448,7 @@ public final class DataGenerators {
                 tag(OreTags.block(ore.material())).add(block);
             });
             ModBlocks.fluidPipes().forEach(pipe -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(pipe.block().get()));
+            ModBlocks.itemPipes().forEach(pipe -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(pipe.block().get()));
             for (Material material : Materials.all()) {
                 if (material.hasOre()) {
                     tag(OreTags.ALL_BLOCKS).addTag(OreTags.block(material));

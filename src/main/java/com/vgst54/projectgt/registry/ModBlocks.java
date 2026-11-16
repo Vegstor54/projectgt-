@@ -12,6 +12,9 @@ import com.vgst54.projectgt.material.Materials;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.FluidPipeMaterials;
 import com.vgst54.projectgt.pipe.FluidPipeType;
+import com.vgst54.projectgt.pipe.ItemPipeBlock;
+import com.vgst54.projectgt.pipe.ItemPipeMaterials;
+import com.vgst54.projectgt.pipe.ItemPipeType;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
@@ -35,6 +38,10 @@ public final class ModBlocks {
     /** Жидкостная труба: вид (материал × размер), блок и предмет-блок. */
     public record FluidPipe(FluidPipeType type, DeferredBlock<FluidPipeBlock> block, DeferredItem<BlockItem> item) {}
 
+    /** Предметная труба: вид (материал × размер × restrictive), блок и предмет-блок. */
+    public record ItemPipe(ItemPipeType type, DeferredBlock<ItemPipeBlock> block, DeferredItem<BlockItem> item) {}
+
+    private static final List<ItemPipe> ITEM_PIPES = new ArrayList<>();
     private static final List<OreBlock> ORES = new ArrayList<>();
     private static final List<FluidPipe> FLUID_PIPES = new ArrayList<>();
 
@@ -69,11 +76,30 @@ public final class ModBlocks {
         }
     }
 
+    static {
+        for (ItemPipeType type : ItemPipeMaterials.all()) {
+            DeferredBlock<ItemPipeBlock> block = BLOCKS.register(type.id(), () -> new ItemPipeBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.METAL)
+                            .strength(2.0f, 6.0f)
+                            .sound(SoundType.METAL)
+                            .noOcclusion(),
+                    type));
+            DeferredItem<BlockItem> item = ModItems.ITEMS.registerSimpleBlockItem(type.id(), block);
+            ITEM_PIPES.add(new ItemPipe(type, block, item));
+        }
+    }
+
     private ModBlocks() {}
 
     /** Все блоки руды в порядке: материал, затем тип камня. */
     public static Stream<OreBlock> ores() {
         return Collections.unmodifiableList(ORES).stream();
+    }
+
+    /** Все предметные трубы в порядке: материал, размер, обычная и restrictive. */
+    public static Stream<ItemPipe> itemPipes() {
+        return Collections.unmodifiableList(ITEM_PIPES).stream();
     }
 
     /** Все жидкостные трубы в порядке: материал, затем размер. */
