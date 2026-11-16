@@ -133,7 +133,8 @@ public class FluidPipeBlock extends Block implements EntityBlock {
 
     /**
      * Состояние с «руками». Рука торчит, если сторона не выключена ключом и либо там есть сосед
-     * с жидкостью, либо сторону открыли ключом вручную (тогда рука торчит и в пустоту).
+     * с жидкостью, либо сторону открыли ключом вручную (тогда рука торчит и в пустоту), либо на ней
+     * стоит стрелка (мини-стрелка рисуется на конце руки, поэтому рука нужна всегда).
      */
     private BlockState computeState(Level level, BlockPos pos) {
         int disabled = 0;
@@ -148,7 +149,7 @@ public class FluidPipeBlock extends Block implements EntityBlock {
         for (Direction dir : Direction.values()) {
             int bit = 1 << dir.ordinal();
             boolean connected = (disabled & bit) == 0
-                    && ((forced & bit) != 0
+                    && ((forced & bit) != 0 || (arrows & bit) != 0
                     || level.getCapability(Capabilities.FluidHandler.BLOCK, pos.relative(dir), dir.getOpposite()) != null);
             state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), connected);
             state = state.setValue(ARROW.get(dir), (arrows & bit) != 0);
