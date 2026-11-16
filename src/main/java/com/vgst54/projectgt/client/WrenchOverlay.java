@@ -19,14 +19,26 @@ import net.neoforged.neoforge.client.event.RenderHighlightEvent;
 /**
  * Оверлей ключа: сетка 3×3 на грани трубы, на которую смотрит игрок. Показывается только при ключе в руке.
  * Центр переключает саму грань, боковые клетки соседние стороны, угловые обратную грань.
- * Клетка, в которую целится курсор, подсвечена; крестик в клетке значит, что рука в эту сторону торчит.
- * Рисуем только линиями. Раскладку клеток даёт PipeWrenchGrid, ту же, что использует клик на сервере.
+ * На грани под курсором сетка яркая, клетка под курсором подсвечена; на остальных пяти гранях
+ * та же сетка рисуется приглушённой, чтобы было видно состояние всех сторон сразу.
+ * Крестик в клетке значит, что рука в эту сторону торчит.
+ * Раскладку клеток даёт PipeWrenchGrid, ту же, что использует клик на сервере.
  */
 public final class WrenchOverlay {
     /** Сдвиг плоскости сетки от грани блока, чтобы линии не сливались с геометрией. */
     private static final double OFFSET = 0.003;
     /** Отступ крестика от краёв клетки. */
     private static final double MARGIN = 0.02;
+
+    private static final double[] EDGES = {
+            0.0, 0.5 - PipeWrenchGrid.CENTER_HALF, 0.5 + PipeWrenchGrid.CENTER_HALF, 1.0};
+
+    /** Цвета: активная грань яркая, остальные обесцвеченные и полупрозрачные. */
+    private record Style(int[] grid, int[] cross) {}
+
+    private static final Style ACTIVE = new Style(new int[]{230, 230, 230, 255}, new int[]{96, 255, 128, 255});
+    private static final Style DIM = new Style(new int[]{150, 150, 150, 90}, new int[]{125, 150, 130, 110});
+    private static final int[] HOVER = {255, 215, 64, 255};
 
     private WrenchOverlay() {}
 
@@ -42,19 +54,14 @@ public final class WrenchOverlay {
         BlockHitResult hit = event.getTarget();
         BlockPos pos = hit.getBlockPos();
         BlockState state = mc.level.getBlockState(pos);
-        if (!(state.getBlock() instanceof FluidPipeBlock pipe)) {
+        if (!(state.getBlock() instanceof FluidPipeBlock)) {
             return;
         }
 
-        Direction face = hit.getDirection();
-        double half = pipe.type().size().halfWidth();
-        double lo = 0.5 - half;
-        double hi = 0.5 + half;
-        double[] edges = {0.0, lo, hi, 1.0};
-
+        Direction hitFace = hit.getDirection();
         Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
-        int hoverU = PipeWrenchGrid.band(PipeWrenchGrid.along(PipeWrenchGrid.tangentU(face), local.x, local.y, local.z), half);
-        int hoverV = PipeWrenchGrid.band(PipeWrenchGrid.along(PipeWrenchGrid.tangentV(face), local.x, local.y, local.z), half);
+        int hoverU = PipeWrenchGrid.band(PipeWrenchGrid.along(PipeWrenchGrid.tangentU(hitFace), local.x, local.y, local.z));
+        int hoverV = PipeWrenchGrid.band(PipeWrenchGrid.along(PipeWrenchGrid.tangentV(hitFace), local.x, local.y, local.z));
 
         Vec3 cam = event.getCamera().getPosition();
         PoseStack poseStack = event.getPoseStack();
@@ -64,46 +71,57 @@ public final class WrenchOverlay {
         poseStack.translate(pos.getX() - cam.x, pos.getY() - cam.y, pos.getZ() - cam.z);
         PoseStack.Pose pose = poseStack.last();
 
-        // Сетка: рамка грани и линии по границам ядра.
-        rect(lines, pose, face, 0, 0, 1, 1, 230, 230, 230);
+        // Сначала приглушённые грани, потом яркая поверх.
+        for (Direction face : Direction.values()) {
+            if (face != hitFace) {
+                drawFace(lines, pose, state, face, DIM, false, 0, 0);
+            }
+        }
+        drawFace(lines, pose, state, hitFace, ACTIVE, true, hoverU, hoverV);
+        poseStack.popPose();
+    }
+
+    private static void drawFace(VertexConsumer lines, PoseStack.Pose pose, BlockState state, Direction face,
+                                 Style style, boolean hover, int hoverU, int hoverV) {
+        // Сетка: рамка грани и линии по границам центральной клетки.
+        rect(lines, pose, face, 0, 0, 1, 1, style.grid());
         for (int i = 1; i <= 2; i++) {
-            line(lines, pose, face, edges[i], 0, edges[i], 1, 230, 230, 230);
-            line(lines, pose, face, 0, edges[i], 1, edges[i], 230, 230, 230);
+            line(lines, pose, face, EDGES[i], 0, EDGES[i], 1, style.grid());
+            line(lines, pose, face, 0, EDGES[i], 1, EDGES[i], style.grid());
         }
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                double u0 = edges[i];
-                double u1 = edges[i + 1];
-                double v0 = edges[j];
-                double v1 = edges[j + 1];
+                double u0 = EDGES[i];
+                double u1 = EDGES[i + 1];
+                double v0 = EDGES[j];
+                double v1 = EDGES[j + 1];
                 Direction dir = PipeWrenchGrid.directionOf(face, i - 1, j - 1);
 
                 if (state.getValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir))) {
                     // Рука торчит в эту сторону: перечёркиваем клетку.
-                    line(lines, pose, face, u0 + MARGIN, v0 + MARGIN, u1 - MARGIN, v1 - MARGIN, 96, 255, 128);
-                    line(lines, pose, face, u0 + MARGIN, v1 - MARGIN, u1 - MARGIN, v0 + MARGIN, 96, 255, 128);
+                    line(lines, pose, face, u0 + MARGIN, v0 + MARGIN, u1 - MARGIN, v1 - MARGIN, style.cross());
+                    line(lines, pose, face, u0 + MARGIN, v1 - MARGIN, u1 - MARGIN, v0 + MARGIN, style.cross());
                 }
-                if (i - 1 == hoverU && j - 1 == hoverV) {
+                if (hover && i - 1 == hoverU && j - 1 == hoverV) {
                     // Клетка под курсором: рамка внутри, чтобы выделялась на фоне сетки.
-                    rect(lines, pose, face, u0 + MARGIN / 2, v0 + MARGIN / 2, u1 - MARGIN / 2, v1 - MARGIN / 2, 255, 215, 64);
+                    rect(lines, pose, face, u0 + MARGIN / 2, v0 + MARGIN / 2, u1 - MARGIN / 2, v1 - MARGIN / 2, HOVER);
                 }
             }
         }
-        poseStack.popPose();
     }
 
     private static void rect(VertexConsumer vc, PoseStack.Pose pose, Direction face,
-                             double u0, double v0, double u1, double v1, int r, int g, int b) {
-        line(vc, pose, face, u0, v0, u1, v0, r, g, b);
-        line(vc, pose, face, u1, v0, u1, v1, r, g, b);
-        line(vc, pose, face, u1, v1, u0, v1, r, g, b);
-        line(vc, pose, face, u0, v1, u0, v0, r, g, b);
+                             double u0, double v0, double u1, double v1, int[] rgba) {
+        line(vc, pose, face, u0, v0, u1, v0, rgba);
+        line(vc, pose, face, u1, v0, u1, v1, rgba);
+        line(vc, pose, face, u1, v1, u0, v1, rgba);
+        line(vc, pose, face, u0, v1, u0, v0, rgba);
     }
 
     /** Отрезок в плоскости грани: (u, v) это координаты вдоль касательных осей грани (0..1). */
     private static void line(VertexConsumer vc, PoseStack.Pose pose, Direction face,
-                             double u0, double v0, double u1, double v1, int r, int g, int b) {
+                             double u0, double v0, double u1, double v1, int[] rgba) {
         double[] a = point(face, u0, v0);
         double[] c = point(face, u1, v1);
         float nx = (float) (c[0] - a[0]);
@@ -115,8 +133,10 @@ public final class WrenchOverlay {
             ny /= len;
             nz /= len;
         }
-        vc.addVertex(pose, (float) a[0], (float) a[1], (float) a[2]).setColor(r, g, b, 255).setNormal(pose, nx, ny, nz);
-        vc.addVertex(pose, (float) c[0], (float) c[1], (float) c[2]).setColor(r, g, b, 255).setNormal(pose, nx, ny, nz);
+        vc.addVertex(pose, (float) a[0], (float) a[1], (float) a[2])
+                .setColor(rgba[0], rgba[1], rgba[2], rgba[3]).setNormal(pose, nx, ny, nz);
+        vc.addVertex(pose, (float) c[0], (float) c[1], (float) c[2])
+                .setColor(rgba[0], rgba[1], rgba[2], rgba[3]).setNormal(pose, nx, ny, nz);
     }
 
     /** Точка на плоскости грани (чуть снаружи блока) в локальных координатах блока. */
