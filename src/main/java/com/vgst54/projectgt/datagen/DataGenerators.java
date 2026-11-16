@@ -15,6 +15,7 @@ import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.material.Materials;
 import com.vgst54.projectgt.material.OreTags;
+import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.PipeSize;
 import com.vgst54.projectgt.registry.ModBlocks;
 import com.vgst54.projectgt.registry.ModCreativeTabs;
@@ -129,12 +130,14 @@ public final class DataGenerators {
             Map<PipeSize, ModelFile> cores = new EnumMap<>(PipeSize.class);
             Map<PipeSize, ModelFile> arms = new EnumMap<>(PipeSize.class);
             Map<PipeSize, ModelFile> inventory = new EnumMap<>(PipeSize.class);
+            Map<PipeSize, ModelFile> arrowModels = new EnumMap<>(PipeSize.class);
             for (PipeSize size : PipeSize.values()) {
                 float lo = 8 - size.thickness() / 2.0f;
                 float hi = 8 + size.thickness() / 2.0f;
                 cores.put(size, pipeBox("pipe/core_" + size.id(), texture, lo, lo, lo, hi, hi, hi));
                 arms.put(size, pipeBox("pipe/arm_" + size.id(), texture, lo, lo, 0, hi, hi, lo));
                 inventory.put(size, pipeBox("pipe/inventory_" + size.id(), texture, lo, lo, 0, hi, hi, 16));
+                arrowModels.put(size, pipeArrow("pipe/arrow_" + size.id(), texture, size));
             }
             ModBlocks.fluidPipes().forEach(pipe -> {
                 PipeSize size = pipe.type().size();
@@ -154,8 +157,48 @@ public final class DataGenerators {
                             .condition(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), true)
                             .end();
                 }
+                // Стрелки (выходы): плоская стрелка сверху трубы, указывает наружу; поворот как у руки.
+                for (Direction dir : Direction.values()) {
+                    builder.part().modelFile(arrowModels.get(size))
+                            .rotationX(dir == Direction.DOWN ? 90 : dir == Direction.UP ? 270 : 0)
+                            .rotationY(switch (dir) {
+                                case EAST -> 90;
+                                case SOUTH -> 180;
+                                case WEST -> 270;
+                                default -> 0;
+                            })
+                            .addModel()
+                            .condition(FluidPipeBlock.ARROW.get(dir), true)
+                            .end();
+                }
                 simpleBlockItem(block, inventory.get(size));
             });
+        }
+
+        /**
+         * Стрелка на северную сторону: острие на z = 2, хвост на z = 8, лежит на верхней грани трубы.
+         * Грани тонируются слоем 1 (оранжевый), слой 0 это цвет материала.
+         */
+        private ModelFile pipeArrow(String name, net.minecraft.resources.ResourceLocation texture, PipeSize size) {
+            float top = 8 + size.thickness() / 2.0f;
+            float y2 = top + 0.6f;
+            float w = Math.max(2f, Math.min(size.thickness() - 2f, 6f));
+            float shaft = Math.max(1f, w / 3f);
+            var model = models().getBuilder(name)
+                    .parent(new ModelFile.UncheckedModelFile("minecraft:block/block"))
+                    .texture("particle", texture)
+                    .texture("pipe", texture);
+            float[][] boxes = {
+                    {8 - shaft / 2, 5, 8 + shaft / 2, 8},   // древко
+                    {8 - w / 2, 4, 8 + w / 2, 5},           // основание наконечника
+                    {8 - w / 3, 3, 8 + w / 3, 4},           // середина
+                    {8 - w / 6, 2, 8 + w / 6, 3}            // острие
+            };
+            for (float[] box : boxes) {
+                model.element().from(box[0], top, box[1]).to(box[2], y2, box[3])
+                        .allFaces((dir, face) -> face.texture("#pipe").tintindex(1)).end();
+            }
+            return model;
         }
 
         private ModelFile pipeBox(String name, net.minecraft.resources.ResourceLocation texture,

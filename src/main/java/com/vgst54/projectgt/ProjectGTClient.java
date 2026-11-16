@@ -20,6 +20,9 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 @Mod(value = ProjectGT.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(modid = ProjectGT.MODID, value = Dist.CLIENT)
 public class ProjectGTClient {
+    /** Цвет стрелок на трубах (tintindex 1). */
+    private static final int ARROW_COLOR = 0xFF9F2A;
+
     public ProjectGTClient(ModContainer container) {
         // Экран настроек: Mods > Project-GT+++ > Config
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
@@ -50,7 +53,8 @@ public class ProjectGTClient {
     @SubscribeEvent
     static void onPipeBlockColors(RegisterColorHandlersEvent.Block event) {
         ModBlocks.fluidPipes().forEach(pipe -> event.register(
-                (state, level, pos, tintIndex) -> tintIndex == 0 ? pipe.type().material().tint() : -1,
+                (state, level, pos, tintIndex) -> tintIndex == 0 ? pipe.type().material().tint()
+                        : tintIndex == 1 ? ARROW_COLOR : -1,
                 pipe.block().get()));
     }
 
