@@ -38,6 +38,21 @@ public class ProjectGTClient {
                 ore.item().get()));
     }
 
+    // Трубы: единая серая текстура, цвет материала задаём тонировкой (tintindex 0).
+    @SubscribeEvent
+    static void onPipeBlockColors(RegisterColorHandlersEvent.Block event) {
+        ModBlocks.fluidPipes().forEach(pipe -> event.register(
+                (state, level, pos, tintIndex) -> tintIndex == 0 ? pipe.type().material().tint() : -1,
+                pipe.block().get()));
+    }
+
+    @SubscribeEvent
+    static void onPipeItemColors(RegisterColorHandlersEvent.Item event) {
+        ModBlocks.fluidPipes().forEach(pipe -> event.register(
+                (stack, tintIndex) -> tintIndex == 0 ? pipe.type().material().tint() : -1,
+                pipe.item().get()));
+    }
+
     // Все предметы материалов используют одну серую текстуру на форму; цвет задаём тонировкой слоя 0.
     // Сырая руда красится в цвет руды, остальные формы в цвет металла.
     @SubscribeEvent

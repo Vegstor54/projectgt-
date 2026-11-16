@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.vgst54.projectgt.ProjectGT;
+import com.vgst54.projectgt.item.WrenchItem;
 import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.material.Materials;
@@ -16,6 +17,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(ProjectGT.MODID);
+
+    /** Ключ: стороны и направление потока у труб. */
+    public static final DeferredItem<WrenchItem> WRENCH =
+            ITEMS.registerItem("wrench", WrenchItem::new, new Item.Properties().stacksTo(1));
 
     private static final Map<Material, Map<MaterialForm, DeferredItem<Item>>> MATERIAL_ITEMS = new HashMap<>();
 

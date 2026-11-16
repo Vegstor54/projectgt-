@@ -17,6 +17,7 @@ public final class ModCreativeTabs {
 
     public static final String MATERIALS_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".materials";
     public static final String ORES_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".ores";
+    public static final String PIPES_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".pipes";
 
     /** Материалы: всё, кроме сырой руды. */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MATERIALS = TABS.register("materials",
@@ -46,6 +47,18 @@ public final class ModCreativeTabs {
                             }
                         });
                         ModBlocks.ores().forEach(ore -> output.accept(ore.item().get()));
+                    })
+                    .build());
+
+    /** Трубы и ключ. */
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> PIPES = TABS.register("pipes",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable(PIPES_TITLE_KEY))
+                    .withTabsBefore(CreativeModeTabs.COMBAT)
+                    .icon(() -> ModItems.WRENCH.get().getDefaultInstance())
+                    .displayItems((params, output) -> {
+                        output.accept(ModItems.WRENCH.get());
+                        ModBlocks.fluidPipes().forEach(pipe -> output.accept(pipe.item().get()));
                     })
                     .build());
 
