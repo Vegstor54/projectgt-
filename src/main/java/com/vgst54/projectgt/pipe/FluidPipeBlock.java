@@ -15,6 +15,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -132,47 +133,77 @@ public class FluidPipeBlock extends Block implements EntityBlock {
     // --- Соединения ---
 
     /**
-     * Состояние с «руками». Рука торчит, если сторона не выключена ключом и либо там есть сосед
-     * с жидкостью, либо сторону открыли ключом вручную (тогда рука торчит и в пустоту), либо на ней
-     * стоит стрелка (мини-стрелка рисуется на конце руки, поэтому рука нужна всегда).
+     * Состояние с «руками» целиком берётся из блок-сущности: рука торчит на открытой стороне (openMask),
+     * стрелка рисуется там, где она стоит (flowMask). Соседи на «руки» не влияют: автоконнекта нет.
      */
     private BlockState computeState(Level level, BlockPos pos) {
-        int disabled = 0;
-        int forced = 0;
+        int open = 0;
         int arrows = 0;
         if (level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipe) {
-            disabled = pipe.disabledMask();
-            forced = pipe.forcedMask();
+            open = pipe.openMask();
             arrows = pipe.flowMask();
         }
         BlockState state = defaultBlockState();
         for (Direction dir : Direction.values()) {
             int bit = 1 << dir.ordinal();
-            boolean connected = (disabled & bit) == 0
-                    && ((forced & bit) != 0 || (arrows & bit) != 0
-                    || level.getCapability(Capabilities.FluidHandler.BLOCK, pos.relative(dir), dir.getOpposite()) != null);
-            state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), connected);
+            state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), (open & bit) != 0);
             state = state.setValue(ARROW.get(dir), (arrows & bit) != 0);
         }
         return state;
     }
 
+    /** Пересчитывает состояние блока по блок-сущности и применяет, если изменилось. */
+    public void refreshState(Level level, BlockPos pos) {
+        BlockState current = level.getBlockState(pos);
+        BlockState updated = computeState(level, pos);
+        if (updated != current) {
+            level.setBlock(pos, updated, Block.UPDATE_ALL);
+        }
+    }
+
+    /**
+     * Автоконнект только с shift и только к блоку, на который ставят трубу (грань, по которой кликнули).
+     * Сосед должен быть трубой или уметь принимать жидкость, обычные блоки не подключаются.
+     * Здесь только отмечаем сторону в состоянии; в блок-сущность она попадёт в setPlacedBy.
+     */
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return computeState(context.getLevel(), context.getClickedPos());
+        BlockState state = defaultBlockState();
+        Player player = context.getPlayer();
+        if (player != null && player.isShiftKeyDown()) {
+            Direction clicked = context.getClickedFace();
+            Direction toward = clicked.getOpposite();
+            BlockPos neighbor = context.getClickedPos().relative(toward);
+            Level level = context.getLevel();
+            if (level.getBlockState(neighbor).getBlock() instanceof FluidPipeBlock
+                    || level.getCapability(Capabilities.FluidHandler.BLOCK, neighbor, clicked) != null) {
+                state = state.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(toward), true);
+            }
+        }
+        return state;
     }
 
     @Override
-    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
-                                   BlockPos neighborPos, boolean movedByPiston) {
-        if (level.isClientSide) {
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level.isClientSide || !(level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipe)) {
             return;
         }
-        BlockState updated = computeState(level, pos);
-        if (updated != state) {
-            level.setBlock(pos, updated, Block.UPDATE_ALL);
+        for (Direction dir : Direction.values()) {
+            if (!state.getValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir))) {
+                continue;
+            }
+            pipe.openSide(dir);
+            // Сосед тоже труба: открываем и его сторону к нам, иначе жидкость не пройдёт.
+            BlockPos neighborPos = pos.relative(dir);
+            if (level.getBlockEntity(neighborPos) instanceof FluidPipeBlockEntity other
+                    && level.getBlockState(neighborPos).getBlock() instanceof FluidPipeBlock otherBlock) {
+                other.openSide(dir.getOpposite());
+                otherBlock.refreshState(level, neighborPos);
+            }
         }
+        refreshState(level, pos);
     }
 
     // --- Ключ ---
@@ -191,21 +222,13 @@ public class FluidPipeBlock extends Block implements EntityBlock {
                 boolean arrow = pipe.toggleArrow(side);
                 player.displayClientMessage(Component.translatable(
                         arrow ? "message.projectgt.pipe.arrow_on" : "message.projectgt.pipe.arrow_off", sideName), true);
-                BlockState withArrows = computeState(level, pos);
-                if (withArrows != state) {
-                    level.setBlock(pos, withArrows, Block.UPDATE_ALL);
-                }
             } else {
-                boolean extended = state.getValue(PipeBlock.PROPERTY_BY_DIRECTION.get(side));
-                boolean enabled = pipe.toggleSide(side, extended);
+                boolean open = pipe.toggleSide(side);
                 player.displayClientMessage(Component.translatable(
-                        enabled ? "message.projectgt.pipe.side_enabled" : "message.projectgt.pipe.side_disabled",
+                        open ? "message.projectgt.pipe.side_enabled" : "message.projectgt.pipe.side_disabled",
                         sideName), true);
-                BlockState updated = computeState(level, pos);
-                if (updated != state) {
-                    level.setBlock(pos, updated, Block.UPDATE_ALL);
-                }
             }
+            refreshState(level, pos);
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
