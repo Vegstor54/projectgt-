@@ -159,7 +159,7 @@ public final class DataGenerators {
                             .condition(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), true)
                             .end();
                 }
-                // Стрелки (выходы): плоские 2D-стрелки на четырёх боковых гранях, указывают наружу; поворот как у руки.
+                // Стрелки (выходы): мини-стрелка на конце трубы, указывает наружу; поворот как у руки.
                 for (Direction dir : Direction.values()) {
                     builder.part().modelFile(arrowModels.get(size))
                             .rotationX(dir == Direction.DOWN ? 90 : dir == Direction.UP ? 270 : 0)
@@ -178,22 +178,27 @@ public final class DataGenerators {
         }
 
         /**
-         * Стрелка на северную сторону: плоские 2D-стрелки (текстура block/pipe_arrow) на четырёх боковых
-         * гранях ядра трубы (верх, низ, восток, запад), все указывают на север. Слой тонировки 1 (оранжевый).
-         * Повороты граней подобраны под UV-раскладку ванили: верх 0, низ 180, восток 90, запад 270.
+         * Мини-стрелка на северную сторону: светло-серая 2D-стрелка (block/pipe_arrow) на конце трубы,
+         * на верхней и нижней грани, острие на север. Размер зависит от толщины трубы (2..4 пикселя),
+         * стрелки разных сторон лежат у своих краёв блока и не налезают друг на друга.
+         * Повороты граней подобраны под UV-раскладку ванили: верх 0, низ 180.
          */
         private ModelFile pipeArrow(String name, PipeSize size) {
-            float lo = 8 - size.thickness() / 2.0f;
-            float hi = 8 + size.thickness() / 2.0f;
+            float t = size.thickness();
+            float lo = 8 - t / 2.0f;
+            float hi = 8 + t / 2.0f;
+            float s = Math.max(2f, Math.min(t / 2.0f, 4f));
+            float x1 = 8 - s / 2;
+            float x2 = 8 + s / 2;
+            float z1 = 0.5f;
+            float z2 = 0.5f + s;
             float e = 0.02f;
             var model = models().getBuilder(name)
                     .parent(new ModelFile.UncheckedModelFile("minecraft:block/block"))
                     .texture("particle", modLoc("block/pipe"))
                     .texture("arrow", modLoc("block/pipe_arrow"));
-            decal(model, Direction.UP, lo, hi + e, lo, hi, hi + e, hi, ModelBuilder.FaceRotation.ZERO);
-            decal(model, Direction.DOWN, lo, lo - e, lo, hi, lo - e, hi, ModelBuilder.FaceRotation.UPSIDE_DOWN);
-            decal(model, Direction.EAST, hi + e, lo, lo, hi + e, hi, hi, ModelBuilder.FaceRotation.CLOCKWISE_90);
-            decal(model, Direction.WEST, lo - e, lo, lo, lo - e, hi, hi, ModelBuilder.FaceRotation.COUNTERCLOCKWISE_90);
+            decal(model, Direction.UP, x1, hi + e, z1, x2, hi + e, z2, ModelBuilder.FaceRotation.ZERO);
+            decal(model, Direction.DOWN, x1, lo - e, z1, x2, lo - e, z2, ModelBuilder.FaceRotation.UPSIDE_DOWN);
             model.renderType("minecraft:cutout");
             return model;
         }
@@ -201,7 +206,7 @@ public final class DataGenerators {
         private void decal(BlockModelBuilder model, Direction face, float x1, float y1, float z1,
                            float x2, float y2, float z2, ModelBuilder.FaceRotation rotation) {
             model.element().from(x1, y1, z1).to(x2, y2, z2)
-                    .face(face).texture("#arrow").uvs(0, 0, 16, 16).rotation(rotation).tintindex(1).end()
+                    .face(face).texture("#arrow").uvs(0, 0, 16, 16).rotation(rotation).end()
                     .end();
         }
 

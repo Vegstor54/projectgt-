@@ -97,11 +97,13 @@ public class FluidPipeBlockEntity extends BlockEntity {
         if (extended) {
             disabledMask |= bit;
             forcedMask &= ~bit;
+            flowMask &= ~bit;   // у выключенной стороны стрелки быть не может
         } else {
             disabledMask &= ~bit;
             forcedMask |= bit;
         }
         setChanged();
+        syncToClient();
         return !extended;
     }
 
@@ -115,13 +117,19 @@ public class FluidPipeBlockEntity extends BlockEntity {
 
     /** Ставит или снимает стрелку на стороне. Возвращает true, если стрелка теперь стоит. */
     public boolean toggleArrow(Direction side) {
-        flowMask ^= 1 << side.ordinal();
+        int bit = 1 << side.ordinal();
+        disabledMask &= ~bit;   // стрелка на выключенной стороне включает её обратно
+        flowMask ^= bit;
         setChanged();
-        // Клиенту нужны стрелки для оверлея ключа.
+        syncToClient();
+        return hasArrow(side);
+    }
+
+    /** Клиенту нужны стороны и стрелки для оверлея ключа. */
+    private void syncToClient() {
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
         }
-        return hasArrow(side);
     }
 
     /** Обработчик жидкости для соседей. Выключенная сторона ничего не отдаёт и не принимает. */
