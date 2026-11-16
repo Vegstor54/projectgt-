@@ -12,8 +12,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseFireBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -26,7 +30,8 @@ import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
  *
  * Раздача (раз в DISTRIBUTE_INTERVAL тиков): труба пытается отдать всё содержимое соседям.
  * Доли пропорциональны свободному месту у соседа, поэтому пустые баки получают больше.
- * Если задано направление потока (flow), труба отдаёт только в эту сторону и не принимает с неё.
+ * Стрелки (flowMask): если стрелка стоит хотя бы на одной стороне, труба отдаёт только в эти стороны
+ * и не принимает с них. Стрелок может быть сколько угодно, хоть все шесть.
  * Если жидкость горячее heatLimit, труба исчезает и поджигает блоки вокруг.
  */
 public class FluidPipeBlockEntity extends BlockEntity {
@@ -41,8 +46,8 @@ public class FluidPipeBlockEntity extends BlockEntity {
     private int disabledMask;
     /** Биты по Direction.ordinal(): 1 значит рука торчит в эту сторону даже без соседа («в никуда»). */
     private int forcedMask;
-    @Nullable
-    private Direction flow;
+    /** Биты по Direction.ordinal(): 1 значит на этой стороне стоит стрелка (выход). 0 значит стрелок нет. */
+    private int flowMask;
     private boolean overheated;
     /** Сдвиг, чтобы трубы не раздавали все в один и тот же тик. */
     private final int phase;
@@ -100,15 +105,23 @@ public class FluidPipeBlockEntity extends BlockEntity {
         return !extended;
     }
 
-    @Nullable
-    public Direction flow() {
-        return flow;
+    public int flowMask() {
+        return flowMask;
     }
 
-    /** Задаёт направление потока; повторный вызов с той же стороной снимает направление. */
-    public void toggleFlow(Direction side) {
-        flow = flow == side ? null : side;
+    public boolean hasArrow(Direction side) {
+        return (flowMask & (1 << side.ordinal())) != 0;
+    }
+
+    /** Ставит или снимает стрелку на стороне. Возвращает true, если стрелка теперь стоит. */
+    public boolean toggleArrow(Direction side) {
+        flowMask ^= 1 << side.ordinal();
         setChanged();
+        // Клиенту нужны стрелки для оверлея ключа.
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        }
+        return hasArrow(side);
     }
 
     /** Обработчик жидкости для соседей. Выключенная сторона ничего не отдаёт и не принимает. */
@@ -145,7 +158,7 @@ public class FluidPipeBlockEntity extends BlockEntity {
         List<Target> targets = new ArrayList<>();
         long totalSpace = 0;
         for (Direction dir : Direction.values()) {
-            if (isSideDisabled(dir) || (flow != null && dir != flow)) {
+            if (isSideDisabled(dir) || (flowMask != 0 && !hasArrow(dir))) {
                 continue;
             }
             IFluidHandler neighbor = level.getCapability(
@@ -228,7 +241,18 @@ public class FluidPipeBlockEntity extends BlockEntity {
         tag.put("Tank", tank.writeToNBT(registries, new CompoundTag()));
         tag.putInt("DisabledMask", disabledMask);
         tag.putInt("ForcedMask", forcedMask);
-        tag.putInt("Flow", flow == null ? -1 : flow.ordinal());
+        tag.putInt("FlowMask", flowMask);
+    }
+
+    // Синхронизация с клиентом: нужна только для оверлея ключа (стрелки и стороны).
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return saveWithoutMetadata(registries);
+    }
+
+    @Override
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
@@ -237,8 +261,7 @@ public class FluidPipeBlockEntity extends BlockEntity {
         tank.readFromNBT(registries, tag.getCompound("Tank"));
         disabledMask = tag.getInt("DisabledMask");
         forcedMask = tag.getInt("ForcedMask");
-        int flowIndex = tag.getInt("Flow");
-        flow = flowIndex >= 0 && flowIndex < Direction.values().length ? Direction.values()[flowIndex] : null;
+        flowMask = tag.getInt("FlowMask");
     }
 
     /** Обработчик жидкости одной стороны трубы. */
@@ -272,8 +295,8 @@ public class FluidPipeBlockEntity extends BlockEntity {
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            // С той стороны, куда направлен поток, ничего не принимаем: так нет откатов назад.
-            if (resource.isEmpty() || (side != null && side == flow)) {
+            // Со сторон со стрелкой (выходов) ничего не принимаем: так нет откатов назад.
+            if (resource.isEmpty() || (side != null && hasArrow(side))) {
                 return 0;
             }
             int filled = tank.fill(resource, action);
