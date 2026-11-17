@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.vgst54.projectgt.ProjectGT;
+import com.vgst54.projectgt.item.ToolType;
 import com.vgst54.projectgt.material.Heat;
 import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.MaterialForm;
@@ -290,6 +291,20 @@ public final class DataGenerators {
             add(ModCreativeTabs.ORES_TITLE_KEY, "Project-GT+++ Ores");
             add(ModCreativeTabs.PIPES_TITLE_KEY, "Project-GT+++ Pipes");
             add(ModCreativeTabs.TOOLS_TITLE_KEY, "Project-GT+++ Tools");
+
+            // Описания инструментов
+            for (ToolType type : ToolType.values()) {
+                add(type.descriptionKey(), type.description());
+            }
+            add("tooltip.projectgt.tool.material", "Material: %s");
+            add("tooltip.projectgt.tool.durability", "Durability: %s / %s");
+            add("tooltip.projectgt.tool.mining_speed", "Mining Speed: %s");
+            add("tooltip.projectgt.tool.mining_level", "Mining Level: %s");
+            add("tooltip.projectgt.tool.crafting_wear", "Loses 1 durability per craft");
+            add("tooltip.projectgt.tier.wood", "Wood");
+            add("tooltip.projectgt.tier.stone", "Stone");
+            add("tooltip.projectgt.tier.iron", "Iron");
+            add("tooltip.projectgt.tier.diamond", "Diamond");
 
             // Трубы
             add("tooltip.projectgt.pipe.throughput", "Throughput: %s L/s");

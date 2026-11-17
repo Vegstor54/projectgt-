@@ -16,34 +16,56 @@ import net.minecraft.world.item.SwordItem;
 
 /** Тип инструмента. Для каждой пары (материал с ToolStats, тип) регистрируется свой предмет. */
 public enum ToolType {
-    HARD_HAMMER("hard_hammer", "Hard Hammer", Group.METAL),
-    SCREWDRIVER("screwdriver", "Screwdriver", Group.METAL),
-    SAW("saw", "Saw", Group.METAL),
-    CROWBAR("crowbar", "Crowbar", Group.METAL),
-    WIRE_CUTTERS("wire_cutters", "Wire Cutters", Group.METAL),
-    WRENCH("wrench", "Wrench", Group.METAL),
-    FILE("file", "File", Group.METAL),
-    MORTAR("mortar", "Mortar", Group.METAL),
-    KNIFE("knife", "Knife", Group.METAL),
-    SCYTHE("scythe", "Scythe", Group.METAL),
-    SOFT_MALLET("soft_mallet", "Soft Mallet", Group.SOFT),
-    PICKAXE("pickaxe", "Pickaxe", Group.ANY),
-    AXE("axe", "Axe", Group.ANY),
-    SHOVEL("shovel", "Shovel", Group.ANY),
-    HOE("hoe", "Hoe", Group.ANY),
-    SWORD("sword", "Sword", Group.ANY);
+    HARD_HAMMER("hard_hammer", "Hard Hammer", "Forges ingots into plates and flattens metal parts.", Group.METAL),
+    SCREWDRIVER("screwdriver", "Screwdriver", "Tightens screws when assembling machine parts.", Group.METAL),
+    SAW("saw", "Saw", "Cuts wood and metal into smaller parts.", Group.METAL),
+    CROWBAR("crowbar", "Crowbar", "Pries parts and blocks loose.", Group.METAL),
+    WIRE_CUTTERS("wire_cutters", "Wire Cutters", "Cuts wire from metal plates.", Group.METAL),
+    WRENCH("wrench", "Wrench", "Configures pipes and assembles casings. Right-click a pipe face to open or close a side; Shift+right-click sets an arrow or restrictive mode.", Group.METAL),
+    FILE("file", "File", "Smooths metal parts and shapes pipes.", Group.METAL),
+    MORTAR("mortar", "Mortar", "Grinds ores and ingots into dust.", Group.METAL),
+    KNIFE("knife", "Knife", "Cuts and carves.", Group.METAL),
+    SCYTHE("scythe", "Scythe", "Cuts grass and crops.", Group.METAL),
+    SOFT_MALLET("soft_mallet", "Soft Mallet", "Taps machines gently where a hard hammer would damage parts.", Group.SOFT),
+    PICKAXE("pickaxe", "Pickaxe", "Mines stone and ores.", Group.ANY),
+    AXE("axe", "Axe", "Chops wood.", Group.ANY),
+    SHOVEL("shovel", "Shovel", "Digs dirt, sand and gravel.", Group.ANY),
+    HOE("hoe", "Hoe", "Tills soil.", Group.ANY),
+    SWORD("sword", "Sword", "Fights mobs.", Group.ANY);
 
     /** Из каких материалов делается: METAL только твёрдые металлы, SOFT только дерево и подобное, ANY любые. */
     private enum Group { METAL, SOFT, ANY }
 
     private final String id;
     private final String displayName;
+    private final String description;
     private final Group group;
 
-    ToolType(String id, String displayName, Group group) {
+    ToolType(String id, String displayName, String description, Group group) {
         this.id = id;
         this.displayName = displayName;
+        this.description = description;
         this.group = group;
+    }
+
+    /** Короткое описание назначения (английский текст для ланга). */
+    public String description() {
+        return description;
+    }
+
+    /** Ключ перевода описания. */
+    public String descriptionKey() {
+        return "tooltip." + ProjectGT.MODID + ".tool." + id;
+    }
+
+    /** Кирка, топор, лопата, мотыга: показываем скорость и уровень добычи. */
+    public boolean isDigger() {
+        return this == PICKAXE || this == AXE || this == SHOVEL || this == HOE;
+    }
+
+    /** Ручной инструмент, который тратит прочность при крафте. */
+    public boolean usesDurabilityInCrafting() {
+        return !isDigger() && this != SWORD && this != WRENCH;
     }
 
     public String id() {

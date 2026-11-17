@@ -11,6 +11,8 @@ import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.material.Materials;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -20,6 +22,10 @@ public final class ModItems {
 
     private static final Map<Material, Map<MaterialForm, DeferredItem<Item>>> MATERIAL_ITEMS = new HashMap<>();
     private static final Map<Material, Map<ToolType, DeferredItem<Item>>> TOOL_ITEMS = new HashMap<>();
+    private static final Map<ResourceLocation, ToolInfo> TOOL_INFO = new HashMap<>();
+
+    /** Из чего сделан предмет-инструмент и какого он типа. */
+    public record ToolInfo(Material material, ToolType type) {}
 
     static {
         for (Material material : Materials.all()) {
@@ -33,6 +39,8 @@ public final class ModItems {
                 Map<ToolType, DeferredItem<Item>> byType = new EnumMap<>(ToolType.class);
                 for (ToolType type : ToolType.values()) {
                     if (type.canMake(material.tool())) {
+                        TOOL_INFO.put(ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, type.itemId(material)),
+                                new ToolInfo(material, type));
                         byType.put(type, ITEMS.registerItem(type.itemId(material), props -> type.create(material, props), new Item.Properties()));
                     }
                 }
@@ -60,6 +68,11 @@ public final class ModItems {
             throw new IllegalArgumentException(material.id() + " has no tool " + type);
         }
         return item;
+    }
+
+    /** Материал и тип инструмента по предмету, либо null, если это не инструмент мода. */
+    public static ToolInfo toolInfo(Item item) {
+        return TOOL_INFO.get(BuiltInRegistries.ITEM.getKey(item));
     }
 
     /** Все инструменты: материалы в порядке объявления, внутри типы в порядке enum. */
