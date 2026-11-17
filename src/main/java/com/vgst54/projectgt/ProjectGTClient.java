@@ -87,4 +87,14 @@ public class ProjectGTClient {
             });
         });
     }
+
+    // Инструменты: слой 0 (рукоять) без окраски, слой 1 (оголовье) красится в цвет материала.
+    @SubscribeEvent
+    static void onToolItemColors(RegisterColorHandlersEvent.Item event) {
+        ModItems.byMaterialTools().forEach(entry -> {
+            int tint = entry.getKey().tint();
+            entry.getValue().values().forEach(holder ->
+                    event.register((stack, tintIndex) -> tintIndex == 1 ? tint : -1, holder.get()));
+        });
+    }
 }

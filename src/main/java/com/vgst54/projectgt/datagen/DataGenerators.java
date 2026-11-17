@@ -36,6 +36,7 @@ import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.data.tags.ItemTagsProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -89,7 +90,11 @@ public final class DataGenerators {
         protected void registerModels() {
             ModItems.byMaterial().forEach(entry -> entry.getValue().forEach((form, item) ->
                     withExistingParent(item.getId().getPath(), "item/generated").texture("layer0", form.texture(entry.getKey()))));
-            withExistingParent(ModItems.WRENCH.getId().getPath(), "item/handheld").texture("layer0", modLoc("item/wrench"));
+            // Инструменты: layer0 рукоять без тонировки, layer1 оголовье (тонируется материалом, см. ProjectGTClient)
+            ModItems.byMaterialTools().forEach(entry -> entry.getValue().forEach((type, item) ->
+                    withExistingParent(item.getId().getPath(), "item/handheld")
+                            .texture("layer0", type.handleTexture())
+                            .texture("layer1", type.headTexture())));
         }
     }
 
@@ -284,9 +289,9 @@ public final class DataGenerators {
             add(ModCreativeTabs.MATERIALS_TITLE_KEY, "Project-GT+++ Materials");
             add(ModCreativeTabs.ORES_TITLE_KEY, "Project-GT+++ Ores");
             add(ModCreativeTabs.PIPES_TITLE_KEY, "Project-GT+++ Pipes");
+            add(ModCreativeTabs.TOOLS_TITLE_KEY, "Project-GT+++ Tools");
 
-            // Трубы и ключ
-            addItem(ModItems.WRENCH, "Wrench");
+            // Трубы
             add("tooltip.projectgt.pipe.throughput", "Throughput: %s L/s");
             add("tooltip.projectgt.pipe.heat_limit", "Heat limit: %s K");
             add("tooltip.projectgt.item_pipe.throughput", "Throughput: %s stacks/s");
@@ -307,6 +312,8 @@ public final class DataGenerators {
 
             ModItems.byMaterial().forEach(entry -> entry.getValue().forEach((form, item) ->
                     addItem(item, form.displayName(entry.getKey()))));
+            ModItems.byMaterialTools().forEach(entry -> entry.getValue().forEach((type, item) ->
+                    addItem(item, type.displayName(entry.getKey()))));
             ModBlocks.ores().forEach(ore -> addBlock(ore.block(), ore.displayName()));
             ModBlocks.fluidPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
             ModBlocks.itemPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
@@ -478,6 +485,20 @@ public final class DataGenerators {
                 }
             }
             copy(OreTags.ALL_BLOCKS, OreTags.ALL_ITEMS);
+
+            // Инструменты: projectgt:tools/<тип> и ванильные теги для кирок, топоров, лопат, мотыг и мечей
+            ModItems.byMaterialTools().forEach(entry -> entry.getValue().forEach((type, holder) -> {
+                Item item = holder.get();
+                tag(type.tag()).add(item);
+                switch (type) {
+                    case PICKAXE -> tag(ItemTags.PICKAXES).add(item);
+                    case AXE -> tag(ItemTags.AXES).add(item);
+                    case SHOVEL -> tag(ItemTags.SHOVELS).add(item);
+                    case HOE -> tag(ItemTags.HOES).add(item);
+                    case SWORD -> tag(ItemTags.SWORDS).add(item);
+                    default -> { }
+                }
+            }));
         }
     }
 }

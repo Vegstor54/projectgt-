@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 
 import com.vgst54.projectgt.item.WrenchItem;
 import com.vgst54.projectgt.registry.ModBlockEntities;
-import com.vgst54.projectgt.registry.ModItems;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -108,7 +107,7 @@ public class FluidPipeBlock extends Block implements EntityBlock {
      */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (context.isHoldingItem(ModItems.WRENCH.get())) {
+        if (WrenchItem.isHolding(context)) {
             return Shapes.block();
         }
         return pipeShape(state);
@@ -236,6 +235,9 @@ public class FluidPipeBlock extends Block implements EntityBlock {
                         sideName), true);
             }
             refreshState(level, pos);
+        }
+        if (!level.isClientSide) {
+            stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
