@@ -20,6 +20,7 @@ public final class ModCreativeTabs {
     public static final String ORES_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".ores";
     public static final String PIPES_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".pipes";
     public static final String TOOLS_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".tools";
+    public static final String MACHINES_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".machines";
 
     /** Материалы: всё, кроме сырой руды. */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MATERIALS = TABS.register("materials",
@@ -72,6 +73,16 @@ public final class ModCreativeTabs {
                     .icon(() -> ModItems.tool(Materials.STEEL, ToolType.WRENCH).get().getDefaultInstance())
                     .displayItems((params, output) -> ModItems.byMaterialTools().forEach(entry ->
                             entry.getValue().values().forEach(item -> output.accept(item.get()))))
+                    .build());
+
+    /** Машины и котлы. */
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MACHINES = TABS.register("machines",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable(MACHINES_TITLE_KEY))
+                    .withTabsBefore(CreativeModeTabs.COMBAT)
+                    .icon(() -> ModBlocks.boilers().findFirst().orElseThrow().item().get().getDefaultInstance())
+                    .displayItems((params, output) ->
+                            ModBlocks.boilers().forEach(boiler -> output.accept(boiler.item().get())))
                     .build());
 
     private ModCreativeTabs() {}

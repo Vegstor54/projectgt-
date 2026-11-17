@@ -136,6 +136,18 @@ public final class DataGenerators {
                 simpleBlockItem(block, model);
             });
             registerPipes();
+            registerBoilers();
+        }
+
+        /** Котлы: куб с одной текстурой на вид (block/boiler/<id>). */
+        private void registerBoilers() {
+            ModBlocks.boilers().forEach(boiler -> {
+                Block block = boiler.block().get();
+                var model = models().cubeAll(boiler.block().getId().getPath(),
+                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/boiler/" + boiler.type().id()));
+                simpleBlock(block, model);
+                simpleBlockItem(block, model);
+            });
         }
 
         /**
@@ -277,6 +289,7 @@ public final class DataGenerators {
             });
             ModBlocks.fluidPipes().forEach(pipe -> dropSelf(pipe.block().get()));
             ModBlocks.itemPipes().forEach(pipe -> dropSelf(pipe.block().get()));
+            ModBlocks.boilers().forEach(boiler -> dropSelf(boiler.block().get()));
         }
 
         @Override
@@ -284,7 +297,8 @@ public final class DataGenerators {
             return Stream.of(
                     ModBlocks.ores().map(ore -> ore.block().get()),
                     ModBlocks.fluidPipes().map(pipe -> (Block) pipe.block().get()),
-                    ModBlocks.itemPipes().map(pipe -> (Block) pipe.block().get()))
+                    ModBlocks.itemPipes().map(pipe -> (Block) pipe.block().get()),
+                    ModBlocks.boilers().map(boiler -> (Block) boiler.block().get()))
                     .flatMap(blocks -> blocks).toList();
         }
     }
@@ -300,6 +314,7 @@ public final class DataGenerators {
             add(ModCreativeTabs.ORES_TITLE_KEY, "Project-GT+++ Ores");
             add(ModCreativeTabs.PIPES_TITLE_KEY, "Project-GT+++ Pipes");
             add(ModCreativeTabs.TOOLS_TITLE_KEY, "Project-GT+++ Tools");
+            add(ModCreativeTabs.MACHINES_TITLE_KEY, "Project-GT+++ Machines");
 
             // Описания инструментов
             for (ToolType type : ToolType.values()) {
@@ -328,6 +343,12 @@ public final class DataGenerators {
             add("message.projectgt.pipe.arrow_on", "Arrow %s: on");
             add("message.projectgt.pipe.arrow_off", "Arrow %s: off");
 
+            // Котлы и пар
+            add("fluid_type.projectgt.steam", "Steam");
+            add("tooltip.projectgt.boiler.steam_output", "Steam output: %s mB/t at full heat");
+            add("tooltip.projectgt.boiler.warmup", "Warm-up: %s s");
+            add("message.projectgt.boiler.status", "Heat: %s%% | Steam: %s mB | Water: %s mB");
+
             // Экран настроек (ключи: <modid>.configuration.<путь опции>)
             add("projectgt.configuration.title", "Project-GT+++ Configs");
             add("projectgt.configuration.section.projectgt.common.toml", "Project-GT+++ Configs");
@@ -342,6 +363,7 @@ public final class DataGenerators {
             ModBlocks.ores().forEach(ore -> addBlock(ore.block(), ore.displayName()));
             ModBlocks.fluidPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
             ModBlocks.itemPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
+            ModBlocks.boilers().forEach(boiler -> addBlock(boiler.block(), boiler.type().displayName()));
         }
     }
 
@@ -483,6 +505,7 @@ public final class DataGenerators {
             });
             ModBlocks.fluidPipes().forEach(pipe -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(pipe.block().get()));
             ModBlocks.itemPipes().forEach(pipe -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(pipe.block().get()));
+            ModBlocks.boilers().forEach(boiler -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(boiler.block().get()));
             for (Material material : Materials.all()) {
                 if (material.hasOre()) {
                     tag(OreTags.ALL_BLOCKS).addTag(OreTags.block(material));
