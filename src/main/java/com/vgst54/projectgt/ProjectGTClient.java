@@ -89,12 +89,15 @@ public class ProjectGTClient {
     }
 
     // Инструменты: слой 0 (рукоять) без окраски, слой 1 (оголовье) красится в цвет материала.
+    // Монтировка и ключ целиком металлические: у них единственный слой 0 красится весь.
     @SubscribeEvent
     static void onToolItemColors(RegisterColorHandlersEvent.Item event) {
         ModItems.byMaterialTools().forEach(entry -> {
             int tint = entry.getKey().tint();
-            entry.getValue().values().forEach(holder ->
-                    event.register((stack, tintIndex) -> tintIndex == 1 ? tint : -1, holder.get()));
+            entry.getValue().forEach((type, holder) -> {
+                int headLayer = type.isFullMetal() ? 0 : 1;
+                event.register((stack, tintIndex) -> tintIndex == headLayer ? tint : -1, holder.get());
+            });
         });
     }
 }

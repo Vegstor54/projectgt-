@@ -93,6 +93,16 @@ public enum ToolType {
         return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "tools/" + id));
     }
 
+    /** Целиком металлический инструмент (монтировка, ключ): одна текстура, весь предмет красится материалом. */
+    public boolean isFullMetal() {
+        return this == CROWBAR || this == WRENCH;
+    }
+
+    /** Единственная текстура целиком металлического инструмента (тонируется слоем 0). */
+    public ResourceLocation fullTexture() {
+        return ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "item/tool/" + id);
+    }
+
     /** Текстура рукояти (без тонировки) и оголовья (серая, тонируется материалом). */
     public ResourceLocation handleTexture() {
         return ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "item/tool/" + id + "_handle");

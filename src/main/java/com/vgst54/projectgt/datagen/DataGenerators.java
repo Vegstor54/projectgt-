@@ -91,11 +91,17 @@ public final class DataGenerators {
         protected void registerModels() {
             ModItems.byMaterial().forEach(entry -> entry.getValue().forEach((form, item) ->
                     withExistingParent(item.getId().getPath(), "item/generated").texture("layer0", form.texture(entry.getKey()))));
-            // Инструменты: layer0 рукоять без тонировки, layer1 оголовье (тонируется материалом, см. ProjectGTClient)
+            // Инструменты: layer0 рукоять без тонировки, layer1 оголовье (тонируется материалом, см. ProjectGTClient).
+            // Монтировка и ключ целиком из металла: один слой layer0, тонируется весь
             ModItems.byMaterialTools().forEach(entry -> entry.getValue().forEach((type, item) ->
-                    withExistingParent(item.getId().getPath(), "item/handheld")
-                            .texture("layer0", type.handleTexture())
-                            .texture("layer1", type.headTexture())));
+                    {
+                        var model = withExistingParent(item.getId().getPath(), "item/handheld");
+                        if (type.isFullMetal()) {
+                            model.texture("layer0", type.fullTexture());
+                        } else {
+                            model.texture("layer0", type.handleTexture()).texture("layer1", type.headTexture());
+                        }
+                    }));
         }
     }
 
