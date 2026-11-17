@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 
 import com.vgst54.projectgt.item.WrenchItem;
 import com.vgst54.projectgt.registry.ModBlockEntities;
-import com.vgst54.projectgt.registry.ModItems;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -83,7 +82,7 @@ public class ItemPipeBlock extends Block implements EntityBlock {
     /** С ключом в руке труба целится как полный блок (сетка 3×3 на всей грани), без ключа настоящая форма. */
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (context.isHoldingItem(ModItems.WRENCH.get())) {
+        if (WrenchItem.isHolding(context)) {
             return Shapes.block();
         }
         return shapes[PipeShapes.mask(state)];
@@ -193,6 +192,9 @@ public class ItemPipeBlock extends Block implements EntityBlock {
                 otherBlock.refreshState(level, neighborPos);
             }
             refreshState(level, pos);
+        }
+        if (!level.isClientSide) {
+            stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }

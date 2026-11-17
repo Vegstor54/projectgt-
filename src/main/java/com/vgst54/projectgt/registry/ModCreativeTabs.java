@@ -1,6 +1,7 @@
 package com.vgst54.projectgt.registry;
 
 import com.vgst54.projectgt.ProjectGT;
+import com.vgst54.projectgt.item.ToolType;
 import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.material.Materials;
 
@@ -18,6 +19,7 @@ public final class ModCreativeTabs {
     public static final String MATERIALS_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".materials";
     public static final String ORES_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".ores";
     public static final String PIPES_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".pipes";
+    public static final String TOOLS_TITLE_KEY = "itemGroup." + ProjectGT.MODID + ".tools";
 
     /** Материалы: всё, кроме сырой руды. */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MATERIALS = TABS.register("materials",
@@ -50,17 +52,26 @@ public final class ModCreativeTabs {
                     })
                     .build());
 
-    /** Трубы и ключ. */
+    /** Трубы. */
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> PIPES = TABS.register("pipes",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable(PIPES_TITLE_KEY))
                     .withTabsBefore(CreativeModeTabs.COMBAT)
-                    .icon(() -> ModItems.WRENCH.get().getDefaultInstance())
+                    .icon(() -> ModBlocks.fluidPipes().findFirst().orElseThrow().item().get().getDefaultInstance())
                     .displayItems((params, output) -> {
-                        output.accept(ModItems.WRENCH.get());
                         ModBlocks.fluidPipes().forEach(pipe -> output.accept(pipe.item().get()));
                         ModBlocks.itemPipes().forEach(pipe -> output.accept(pipe.item().get()));
                     })
+                    .build());
+
+    /** Инструменты из материалов, включая ключи. */
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TOOLS = TABS.register("tools",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable(TOOLS_TITLE_KEY))
+                    .withTabsBefore(CreativeModeTabs.COMBAT)
+                    .icon(() -> ModItems.tool(Materials.STEEL, ToolType.WRENCH).get().getDefaultInstance())
+                    .displayItems((params, output) -> ModItems.byMaterialTools().forEach(entry ->
+                            entry.getValue().values().forEach(item -> output.accept(item.get()))))
                     .build());
 
     private ModCreativeTabs() {}

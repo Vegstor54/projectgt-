@@ -26,10 +26,10 @@ public final class Materials {
 
     // --- Металлы (руда есть). Ванильные: слитков тут нет, они уже есть в игре. ---
     public static final Material IRON   = add(Material.of("iron",   "Iron",   0xC8C8C8,
-            DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withOreColor(0xD9A98A).withVanillaRaw(() -> Items.RAW_IRON).withMeltingPoint(1538));
+            DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withOreColor(0xD9A98A).withVanillaRaw(() -> Items.RAW_IRON).withMeltingPoint(1538).withTool(new ToolStats(250, 6.0f, 2, true)));
     public static final Material COPPER = add(Material.of("copper", "Copper", 0xE07040,
             DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING)
-            .withVanillaRaw(() -> Items.RAW_COPPER).withMeltingPoint(1085));
+            .withVanillaRaw(() -> Items.RAW_COPPER).withMeltingPoint(1085).withTool(new ToolStats(190, 5.0f, 1, true)));
     public static final Material TIN    = add(Material.of("tin",    "Tin",    0xB4BDC9,
             RAW_ORE, DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withMeltingPoint(232));
     public static final Material NICKEL = add(Material.of("nickel", "Nickel", 0xC6C9C6,
@@ -37,15 +37,19 @@ public final class Materials {
     public static final Material ZINC   = add(Material.of("zinc",   "Zinc",   0xA8B5B8,
             DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withMeltingPoint(420));
 
+    // --- Дерево: только простые формы (без двойных пластин), мягкие инструменты ---
+    public static final Material WOOD   = add(Material.of("wood",   "Wood",   0x8B6B3E,
+            DUST, PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR).withTool(new ToolStats(59, 2.0f, 0, false)));
+
     // --- Золото: руды нет (пока), мягкое, только заготовки. ---
     public static final Material GOLD   = add(Material.of("gold",   "Gold",   0xFFDF3A,
             DUST, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD).withMeltingPoint(1064));
 
     // --- Сплавы: руды нет, получаются крафтом/смешиванием. ---
     public static final Material BRONZE = add(Material.of("bronze", "Bronze", 0xD08A2E,
-            DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withMeltingPoint(950));
+            DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withMeltingPoint(950).withTool(new ToolStats(300, 6.0f, 2, true)));
     public static final Material STEEL  = add(Material.of("steel",  "Steel",  0x6F7378,
-            DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withMeltingPoint(1500));
+            DUST, INGOT, DOUBLE_INGOT, PLATE, DOUBLE_PLATE, ROD, BOLT, SCREW, GEAR, SMALL_GEAR, SPRING, SMALL_SPRING).withMeltingPoint(1500).withTool(new ToolStats(500, 8.0f, 3, true)));
 
     // --- Кристаллы ---
     public static final Material DIAMOND  = add(Material.of("diamond", "Diamond", 0x58E0D8, IconSet.CRYSTAL,

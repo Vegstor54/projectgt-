@@ -1,14 +1,18 @@
 package com.vgst54.projectgt.item;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
 
 /**
- * Ключ. Сама логика живёт в блоках, которые умеют с ним работать (FluidPipeBlock):
+ * Ключ (у каждого материала свой). Сама логика живёт в блоках, которые умеют с ним работать (FluidPipeBlock, ItemPipeBlock):
  * ПКМ включает и выключает сторону, ПКМ с sneak ставит или снимает стрелку (выход) на стороне.
+ * Каждое действие тратит прочность.
  */
 public class WrenchItem extends Item {
     public WrenchItem(Properties properties) {
@@ -22,5 +26,12 @@ public class WrenchItem extends Item {
     @Override
     public boolean doesSneakBypassUse(ItemStack stack, LevelReader level, BlockPos pos, Player player) {
         return true;
+    }
+
+    /** Держит ли сущность из контекста коллизии ключ любого материала в главной руке. */
+    public static boolean isHolding(CollisionContext context) {
+        return context instanceof EntityCollisionContext entityContext
+                && entityContext.getEntity() instanceof LivingEntity living
+                && living.getMainHandItem().getItem() instanceof WrenchItem;
     }
 }
