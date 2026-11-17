@@ -7,6 +7,8 @@ import java.util.stream.Stream;
 
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.block.StoneType;
+import com.vgst54.projectgt.boiler.BoilerType;
+import com.vgst54.projectgt.boiler.SteamBoilerBlock;
 import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.Materials;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
@@ -41,6 +43,10 @@ public final class ModBlocks {
     /** Предметная труба: вид (материал × размер), блок и предмет-блок. */
     public record ItemPipe(ItemPipeType type, DeferredBlock<ItemPipeBlock> block, DeferredItem<BlockItem> item) {}
 
+    /** Паровой котёл: вид (чем греется × давление), блок и предмет-блок. */
+    public record Boiler(BoilerType type, DeferredBlock<SteamBoilerBlock> block, DeferredItem<BlockItem> item) {}
+
+    private static final List<Boiler> BOILERS = new ArrayList<>();
     private static final List<ItemPipe> ITEM_PIPES = new ArrayList<>();
     private static final List<OreBlock> ORES = new ArrayList<>();
     private static final List<FluidPipe> FLUID_PIPES = new ArrayList<>();
@@ -90,7 +96,26 @@ public final class ModBlocks {
         }
     }
 
+    static {
+        for (BoilerType type : BoilerType.all()) {
+            DeferredBlock<SteamBoilerBlock> block = BLOCKS.register(type.id(), () -> new SteamBoilerBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.METAL)
+                            .strength(3.0f, 6.0f)
+                            .sound(SoundType.METAL)
+                            .requiresCorrectToolForDrops(),
+                    type));
+            DeferredItem<BlockItem> item = ModItems.ITEMS.registerSimpleBlockItem(type.id(), block);
+            BOILERS.add(new Boiler(type, block, item));
+        }
+    }
+
     private ModBlocks() {}
+
+    /** Все паровые котлы: сначала низкое давление, затем высокое. */
+    public static Stream<Boiler> boilers() {
+        return Collections.unmodifiableList(BOILERS).stream();
+    }
 
     /** Все блоки руды в порядке: материал, затем тип камня. */
     public static Stream<OreBlock> ores() {

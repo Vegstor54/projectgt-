@@ -7,6 +7,7 @@ import com.vgst54.projectgt.registry.ModBiomeModifiers;
 import com.vgst54.projectgt.registry.ModBlockEntities;
 import com.vgst54.projectgt.registry.ModBlocks;
 import com.vgst54.projectgt.registry.ModCreativeTabs;
+import com.vgst54.projectgt.registry.ModFluids;
 import com.vgst54.projectgt.registry.ModItems;
 import com.vgst54.projectgt.worldgen.ModFeatures;
 
@@ -24,6 +25,8 @@ public class ProjectGT {
         // ModBlocks регистрирует и предметы-блоки в ModItems.ITEMS, поэтому блоки инициализируем первыми.
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
+        ModFluids.FLUID_TYPES.register(modEventBus);
+        ModFluids.FLUIDS.register(modEventBus);
         ModBlockEntities.TYPES.register(modEventBus);
         ModCreativeTabs.TABS.register(modEventBus);
         ModBiomeModifiers.SERIALIZERS.register(modEventBus);
