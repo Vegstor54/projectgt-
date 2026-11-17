@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "projectgt:item/tool/screwdriver_handle",
+    "layer1": "projectgt:item/tool/screwdriver_head"
+  }
+}
