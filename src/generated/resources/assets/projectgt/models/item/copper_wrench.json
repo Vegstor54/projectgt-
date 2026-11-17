@@ -1,7 +1,6 @@
 {
   "parent": "minecraft:item/handheld",
   "textures": {
-    "layer0": "projectgt:item/tool/wrench_handle",
-    "layer1": "projectgt:item/tool/wrench_head"
+    "layer0": "projectgt:item/tool/wrench"
   }
 }

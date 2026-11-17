@@ -554,6 +554,7 @@
   "tooltip.projectgt.tool.crafting_wear": "Loses 1 durability per craft",
   "tooltip.projectgt.tool.crowbar": "Pries parts and blocks loose.",
   "tooltip.projectgt.tool.durability": "Durability: %s / %s",
+  "tooltip.projectgt.tool.dyeable_grip": "Combine with dye in crafting to color the grip",
   "tooltip.projectgt.tool.file": "Smooths metal parts and shapes pipes.",
   "tooltip.projectgt.tool.hard_hammer": "Forges ingots into plates and flattens metal parts.",
   "tooltip.projectgt.tool.hoe": "Tills soil.",
