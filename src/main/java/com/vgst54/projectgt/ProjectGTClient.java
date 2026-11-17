@@ -1,11 +1,13 @@
 package com.vgst54.projectgt;
 
 import com.vgst54.projectgt.client.WrenchOverlay;
+import com.vgst54.projectgt.item.ToolType;
 import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.MaterialForm;
 import com.vgst54.projectgt.registry.ModBlocks;
 import com.vgst54.projectgt.registry.ModItems;
 
+import net.minecraft.world.item.component.DyedItemColor;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -89,12 +91,22 @@ public class ProjectGTClient {
     }
 
     // Инструменты: слой 0 (рукоять) без окраски, слой 1 (оголовье) красится в цвет материала.
+    // Монтировка и ключ целиком металлические: у них единственный слой 0 красится весь.
+    // У монтировки слой 1 (хват) красится красителем.
     @SubscribeEvent
     static void onToolItemColors(RegisterColorHandlersEvent.Item event) {
         ModItems.byMaterialTools().forEach(entry -> {
             int tint = entry.getKey().tint();
-            entry.getValue().values().forEach(holder ->
-                    event.register((stack, tintIndex) -> tintIndex == 1 ? tint : -1, holder.get()));
+            entry.getValue().forEach((type, holder) -> {
+                int headLayer = type.isFullMetal() ? 0 : 1;
+                event.register((stack, tintIndex) -> {
+                    if (type.hasDyedGrip() && tintIndex == 1) {
+                        // Хват монтировки: цвет красителя, без покраски красный по умолчанию
+                        return DyedItemColor.getOrDefault(stack, ToolType.DEFAULT_GRIP_COLOR);
+                    }
+                    return tintIndex == headLayer ? tint : -1;
+                }, holder.get());
+            });
         });
     }
 }

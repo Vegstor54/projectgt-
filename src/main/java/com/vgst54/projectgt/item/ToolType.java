@@ -93,6 +93,29 @@ public enum ToolType {
         return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "tools/" + id));
     }
 
+    /** Целиком металлический инструмент (монтировка, ключ): одна текстура, весь предмет красится материалом. */
+    public boolean isFullMetal() {
+        return this == CROWBAR || this == WRENCH;
+    }
+
+    /** У монтировки хват (слой 1) красится красителем через компонент DYED_COLOR. */
+    public boolean hasDyedGrip() {
+        return this == CROWBAR;
+    }
+
+    /** Цвет хвата монтировки без покраски (ARGB). */
+    public static final int DEFAULT_GRIP_COLOR = 0xFFB22222;
+
+    /** Текстура хвата монтировки (серая, красится красителем). */
+    public ResourceLocation gripTexture() {
+        return ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "item/tool/" + id + "_grip");
+    }
+
+    /** Единственная текстура целиком металлического инструмента (тонируется слоем 0). */
+    public ResourceLocation fullTexture() {
+        return ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "item/tool/" + id);
+    }
+
     /** Текстура рукояти (без тонировки) и оголовья (серая, тонируется материалом). */
     public ResourceLocation handleTexture() {
         return ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "item/tool/" + id + "_handle");

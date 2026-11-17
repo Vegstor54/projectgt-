@@ -49,6 +49,9 @@ public final class ToolTooltips {
                             Component.translatable("tooltip.projectgt.tier." + TIER_KEYS[Math.min(stats.tier(), 3)]))
                     .withStyle(ChatFormatting.YELLOW));
         }
+        if (type.hasDyedGrip()) {
+            lines.add(Component.translatable("tooltip.projectgt.tool.dyeable_grip").withStyle(ChatFormatting.DARK_GRAY));
+        }
         if (type.usesDurabilityInCrafting()) {
             lines.add(Component.translatable("tooltip.projectgt.tool.crafting_wear").withStyle(ChatFormatting.DARK_GRAY));
         }
