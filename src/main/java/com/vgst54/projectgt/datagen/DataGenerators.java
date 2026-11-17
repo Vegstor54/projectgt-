@@ -98,6 +98,9 @@ public final class DataGenerators {
                         var model = withExistingParent(item.getId().getPath(), "item/handheld");
                         if (type.isFullMetal()) {
                             model.texture("layer0", type.fullTexture());
+                            if (type.hasDyedGrip()) {
+                                model.texture("layer1", type.gripTexture());
+                            }
                         } else {
                             model.texture("layer0", type.handleTexture()).texture("layer1", type.headTexture());
                         }
@@ -307,6 +310,7 @@ public final class DataGenerators {
             add("tooltip.projectgt.tool.mining_speed", "Mining Speed: %s");
             add("tooltip.projectgt.tool.mining_level", "Mining Level: %s");
             add("tooltip.projectgt.tool.crafting_wear", "Loses 1 durability per craft");
+            add("tooltip.projectgt.tool.dyeable_grip", "Combine with dye in crafting to color the grip");
             add("tooltip.projectgt.tier.wood", "Wood");
             add("tooltip.projectgt.tier.stone", "Stone");
             add("tooltip.projectgt.tier.iron", "Iron");
@@ -516,6 +520,7 @@ public final class DataGenerators {
                     case AXE -> tag(ItemTags.AXES).add(item);
                     case SHOVEL -> tag(ItemTags.SHOVELS).add(item);
                     case HOE -> tag(ItemTags.HOES).add(item);
+                    case CROWBAR -> tag(ItemTags.DYEABLE).add(item);   // хват красится ванильным рецептом покраски
                     case SWORD -> tag(ItemTags.SWORDS).add(item);
                     default -> { }
                 }

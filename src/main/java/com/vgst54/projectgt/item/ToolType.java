@@ -98,6 +98,19 @@ public enum ToolType {
         return this == CROWBAR || this == WRENCH;
     }
 
+    /** У монтировки хват (слой 1) красится красителем через компонент DYED_COLOR. */
+    public boolean hasDyedGrip() {
+        return this == CROWBAR;
+    }
+
+    /** Цвет хвата монтировки без покраски (ARGB). */
+    public static final int DEFAULT_GRIP_COLOR = 0xFFB22222;
+
+    /** Текстура хвата монтировки (серая, красится красителем). */
+    public ResourceLocation gripTexture() {
+        return ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "item/tool/" + id + "_grip");
+    }
+
     /** Единственная текстура целиком металлического инструмента (тонируется слоем 0). */
     public ResourceLocation fullTexture() {
         return ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "item/tool/" + id);
