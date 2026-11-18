@@ -56,7 +56,7 @@ public class SteamBoilerBlockEntity extends BlockEntity implements MenuProvider 
     private final FluidTank fuel;
     private final ItemStackHandler fuelSlot;
     private final IFluidHandler fluidHandler = new Handler();
-    /** Для меню: 0 нагрев, 1 нагрев на максимуме, 2 пламя 0..1000. Клиенту уходит как short, наши значения меньше 32767. */
+    /** Для меню: 0 нагрев, 1 нагрев на максимуме, 2 пламя 0..1000, 3 вода в баке, 4 ёмкость бака воды. Клиенту уходит как short, наши значения меньше 32767. */
     private final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
@@ -64,6 +64,8 @@ public class SteamBoilerBlockEntity extends BlockEntity implements MenuProvider 
                 case 0 -> heat;
                 case 1 -> type.warmupTicks();
                 case 2 -> flamePermille();
+                case 3 -> water.getFluidAmount();
+                case 4 -> type.waterCapacity();
                 default -> 0;
             };
         }
@@ -75,7 +77,7 @@ public class SteamBoilerBlockEntity extends BlockEntity implements MenuProvider 
 
         @Override
         public int getCount() {
-            return 3;
+            return 5;
         }
     };
 

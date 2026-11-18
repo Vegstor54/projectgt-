@@ -19,7 +19,7 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
 /**
- * Меню парового котла: слот топлива (только у угольного), индикатор пламени и шкала нагрева.
+ * Меню парового котла: слот топлива (только у угольного), индикатор пламени, шкала нагрева и шкала воды.
  * Порядок слотов: [0 топливо, если есть], затем инвентарь игрока (27) и хотбар (9).
  */
 public class BoilerMenu extends AbstractContainerMenu {
@@ -40,7 +40,7 @@ public class BoilerMenu extends AbstractContainerMenu {
 
     /** Клиентская сторона: буфер говорит, есть ли слот топлива. */
     public BoilerMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
-        this(id, inventory, buffer.readBoolean() ? new ItemStackHandler(1) : null, new SimpleContainerData(3),
+        this(id, inventory, buffer.readBoolean() ? new ItemStackHandler(1) : null, new SimpleContainerData(5),
                 ContainerLevelAccess.NULL, null);
     }
 
@@ -89,6 +89,20 @@ public class BoilerMenu extends AbstractContainerMenu {
     public int heatPixels(int height) {
         int warmup = data.get(1);
         return warmup <= 0 ? 0 : Math.min(height, data.get(0) * height / warmup);
+    }
+
+    public int water() {
+        return data.get(3);
+    }
+
+    public int waterCapacity() {
+        return data.get(4);
+    }
+
+    /** Заполненная часть шкалы воды в пикселях (0..height). */
+    public int waterPixels(int height) {
+        int capacity = waterCapacity();
+        return capacity <= 0 ? 0 : Math.min(height, water() * height / capacity);
     }
 
     /** Высота пламени в пикселях (0..height). */

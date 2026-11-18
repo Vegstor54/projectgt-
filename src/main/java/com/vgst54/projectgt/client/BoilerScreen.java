@@ -20,6 +20,7 @@ public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
     private static final int BAR_BG = 0xFF373737;
     private static final int FLAME = 0xFFFF8A1F;
     private static final int HEAT = 0xFFD8402A;
+    private static final int WATER = 0xFF3F76E4;
 
     private static final int FLAME_X = 56;
     private static final int FLAME_Y = 36;
@@ -30,6 +31,11 @@ public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
     private static final int HEAT_Y = 18;
     private static final int HEAT_W = 12;
     private static final int HEAT_H = 52;
+
+    private static final int WATER_X = 140;
+    private static final int WATER_Y = 18;
+    private static final int WATER_W = 12;
+    private static final int WATER_H = 52;
 
     public BoilerScreen(BoilerMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -62,6 +68,10 @@ public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
         graphics.fill(x + HEAT_X, y + HEAT_Y, x + HEAT_X + HEAT_W, y + HEAT_Y + HEAT_H, BAR_BG);
         int heat = menu.heatPixels(HEAT_H);
         graphics.fill(x + HEAT_X, y + HEAT_Y + HEAT_H - heat, x + HEAT_X + HEAT_W, y + HEAT_Y + HEAT_H, HEAT);
+        // Шкала воды (снизу вверх)
+        graphics.fill(x + WATER_X, y + WATER_Y, x + WATER_X + WATER_W, y + WATER_Y + WATER_H, BAR_BG);
+        int water = menu.waterPixels(WATER_H);
+        graphics.fill(x + WATER_X, y + WATER_Y + WATER_H - water, x + WATER_X + WATER_W, y + WATER_Y + WATER_H, WATER);
         // Метка, с которой начинается пар (четверть шкалы)
         int markY = y + HEAT_Y + HEAT_H - HEAT_H / 4;
         graphics.fill(x + HEAT_X - 2, markY, x + HEAT_X + HEAT_W + 2, markY + 1, PANEL_DARK);
@@ -76,6 +86,10 @@ public class BoilerScreen extends AbstractContainerScreen<BoilerMenu> {
                     Component.translatable("gui.projectgt.boiler.heat", menu.kelvin()),
                     Component.translatable("gui.projectgt.boiler.steam_from", BoilerMenu.steamStartKelvin())),
                     mouseX, mouseY);
+        }
+        if (isHovering(WATER_X, WATER_Y, WATER_W, WATER_H, mouseX, mouseY)) {
+            graphics.renderTooltip(font, Component.translatable("gui.projectgt.boiler.water",
+                    menu.water(), menu.waterCapacity()), mouseX, mouseY);
         }
     }
 }
