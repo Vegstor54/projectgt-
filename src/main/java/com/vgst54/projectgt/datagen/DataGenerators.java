@@ -525,7 +525,8 @@ public final class DataGenerators {
         }
 
         /**
-         * Рецепты машин. Значения черновые, баланс правится здесь.
+         * Рецепты машин. Время дробления слитка и ковки пластин равно массе материала (Material.mass), как в GTCEu;
+         * остальные значения черновые, баланс правится здесь.
          * Дробитель и компрессор тянут 2 EU/t, кузнечный молот 16 EU/t: так паровые версии тратят 2/4 и 16/32 mB/t,
          * как в GTCEu. Рецептов экстрактора пока нет: ему нужны жидкости или резина.
          * Ванильные слитки (железо, медь, золото) лежат в тегах c:ingots/&lt;материал&gt;, как и слитки мода.
@@ -533,14 +534,18 @@ public final class DataGenerators {
         private void buildMachineRecipes(RecipeOutput output) {
             for (Material material : List.of(Materials.IRON, Materials.COPPER, Materials.GOLD, Materials.TIN,
                     Materials.NICKEL, Materials.ZINC, Materials.BRONZE, Materials.STEEL)) {
+                // Как в GT: время дробления и ковки равно массе материала в тиках.
+                int ticks = Math.max(1, material.mass());
                 SizedIngredient ingot = SizedIngredient.of(MaterialForm.INGOT.tag(material), 1);
                 if (material.has(MaterialForm.DUST)) {
                     machineRecipe(output, MachineType.MACERATOR, material.id() + "_ingot_to_dust", List.of(ingot),
-                            List.of(new ItemStack(ModItems.get(material, MaterialForm.DUST).get())), 2, 400);
+                            List.of(new ItemStack(ModItems.get(material, MaterialForm.DUST).get())), 2, ticks);
                 }
                 if (material.has(MaterialForm.PLATE)) {
-                    machineRecipe(output, MachineType.FORGE_HAMMER, material.id() + "_ingot_to_plate", List.of(ingot),
-                            List.of(new ItemStack(ModItems.get(material, MaterialForm.PLATE).get())), 16, 100);
+                    // Как в GT: три слитка дают две пластины.
+                    machineRecipe(output, MachineType.FORGE_HAMMER, material.id() + "_ingots_to_plates",
+                            List.of(SizedIngredient.of(MaterialForm.INGOT.tag(material), 3)),
+                            List.of(new ItemStack(ModItems.get(material, MaterialForm.PLATE).get(), 2)), 16, ticks);
                 }
             }
             // Компрессор: девять штук в ванильный блок.
