@@ -11,6 +11,12 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -36,7 +42,7 @@ import net.neoforged.neoforge.items.ItemStackHandler;
  * У угольного есть слот топлива (предметный handler для воронок).
  * Пока нет: взрыва при сухом нагреве, GUI (статус по ПКМ пустой рукой).
  */
-public class SteamBoilerBlockEntity extends BlockEntity {
+public class SteamBoilerBlockEntity extends BlockEntity implements MenuProvider {
     /** mB пара на 1 mB воды. */
     public static final int STEAM_PER_WATER = 160;
     /** Раз во сколько тиков остывает на 1 при отсутствии горения. */
@@ -50,10 +56,36 @@ public class SteamBoilerBlockEntity extends BlockEntity {
     private final FluidTank fuel;
     private final ItemStackHandler fuelSlot;
     private final IFluidHandler fluidHandler = new Handler();
+    /** Для меню: 0 нагрев, 1 нагрев на максимуме, 2 пламя 0..1000. Клиенту уходит как short, наши значения меньше 32767. */
+    private final ContainerData data = new ContainerData() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> heat;
+                case 1 -> type.warmupTicks();
+                case 2 -> flamePermille();
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+            // Только для чтения: клиент данные не меняет.
+        }
+
+        @Override
+        public int getCount() {
+            return 3;
+        }
+    };
 
     private int heat;
     /** Сколько тиков ещё горит текущее топливо. */
     private int burnTime;
+    /** Сколько тиков горения было у текущей порции топлива (для индикатора пламени). */
+    private int burnTotal;
+    /** Горел ли котёл в последнем тике (у солнечного это просто «светит солнце»). */
+    private boolean lit;
     /** Пар, уже оплаченный водой, но ещё не выданный (вода тратится целыми mB). */
     private int steamCredit;
 
@@ -126,6 +158,30 @@ public class SteamBoilerBlockEntity extends BlockEntity {
                 heat * 100 / type.warmupTicks(), steam.getFluidAmount(), water.getFluidAmount());
     }
 
+    /** Пламя для индикатора: 0..1000. Без топлива и без горения 0; у солнечного 1000, пока светит солнце. */
+    private int flamePermille() {
+        if (!lit) {
+            return 0;
+        }
+        if (type.kind() == BoilerKind.SOLAR || burnTotal <= 0) {
+            return 1000;
+        }
+        return Math.min(1000, burnTime * 1000 / burnTotal);
+    }
+
+    // --- Меню ---
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable(getBlockState().getBlock().getDescriptionId());
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+        return new BoilerMenu(id, inventory, itemHandler(), data,
+                ContainerLevelAccess.create(level, worldPosition), getBlockState().getBlock());
+    }
+
     // --- Тик ---
 
     public void serverTick() {
@@ -133,6 +189,7 @@ public class SteamBoilerBlockEntity extends BlockEntity {
             return;
         }
         boolean burning = updateBurning(level);
+        lit = burning;
         if (burning) {
             if (heat < type.warmupTicks()) {
                 heat++;
@@ -174,6 +231,7 @@ public class SteamBoilerBlockEntity extends BlockEntity {
         }
         fuelSlot.extractItem(0, 1, false);
         burnTime = ticks * type.fuelDurationFactor();
+        burnTotal = burnTime;
         return true;
     }
 
@@ -185,6 +243,7 @@ public class SteamBoilerBlockEntity extends BlockEntity {
         }
         fuel.drain(LIQUID_FUEL_PORTION, IFluidHandler.FluidAction.EXECUTE);
         burnTime = perMb * LIQUID_FUEL_PORTION * type.fuelDurationFactor();
+        burnTotal = burnTime;
         return true;
     }
 
@@ -247,6 +306,7 @@ public class SteamBoilerBlockEntity extends BlockEntity {
         tag.put("FuelSlot", fuelSlot.serializeNBT(registries));
         tag.putInt("Heat", heat);
         tag.putInt("BurnTime", burnTime);
+        tag.putInt("BurnTotal", burnTotal);
         tag.putInt("SteamCredit", steamCredit);
     }
 
@@ -259,6 +319,7 @@ public class SteamBoilerBlockEntity extends BlockEntity {
         fuelSlot.deserializeNBT(registries, tag.getCompound("FuelSlot"));
         heat = tag.getInt("Heat");
         burnTime = tag.getInt("BurnTime");
+        burnTotal = tag.getInt("BurnTotal");
         steamCredit = tag.getInt("SteamCredit");
     }
 
