@@ -12,7 +12,7 @@ import net.minecraft.world.item.Item;
  * набор иконок, набор форм и, при необходимости, ванильный предмет сырой руды.
  */
 public record Material(String id, String displayName, int color, int oreColor, IconSet iconSet,
-                       Set<MaterialForm> forms, Supplier<Item> vanillaRaw, int meltingPoint, ToolStats tool) {
+                       Set<MaterialForm> forms, Supplier<Item> vanillaRaw, int meltingPoint, ToolStats tool, int mass) {
 
     /** Материал с набором иконок METALLIC. */
     public static Material of(String id, String displayName, int rgb, MaterialForm first, MaterialForm... rest) {
@@ -22,12 +22,12 @@ public record Material(String id, String displayName, int color, int oreColor, I
     public static Material of(String id, String displayName, int rgb, IconSet iconSet,
                               MaterialForm first, MaterialForm... rest) {
         EnumSet<MaterialForm> set = EnumSet.of(first, rest);
-        return new Material(id, displayName, rgb, rgb, iconSet, Collections.unmodifiableSet(set), null, 0, null);
+        return new Material(id, displayName, rgb, rgb, iconSet, Collections.unmodifiableSet(set), null, 0, null, 0);
     }
 
     /** Отдельный цвет для руды (блоки руды и сырая руда), если он должен отличаться от цвета металла. */
     public Material withOreColor(int rgb) {
-        return new Material(id, displayName, color, rgb, iconSet, forms, vanillaRaw, meltingPoint, tool);
+        return new Material(id, displayName, color, rgb, iconSet, forms, vanillaRaw, meltingPoint, tool, mass);
     }
 
     /**
@@ -35,7 +35,7 @@ public record Material(String id, String displayName, int color, int oreColor, I
      * вместо собственной формы RAW_ORE.
      */
     public Material withVanillaRaw(Supplier<Item> raw) {
-        return new Material(id, displayName, color, oreColor, iconSet, forms, raw, meltingPoint, tool);
+        return new Material(id, displayName, color, oreColor, iconSet, forms, raw, meltingPoint, tool, mass);
     }
 
     /**
@@ -43,12 +43,20 @@ public record Material(String id, String displayName, int color, int oreColor, I
      * такой материал нигде не ограничен по температуре. Источники тепла и их потолки: см. Heat.
      */
     public Material withMeltingPoint(int degrees) {
-        return new Material(id, displayName, color, oreColor, iconSet, forms, vanillaRaw, degrees, tool);
+        return new Material(id, displayName, color, oreColor, iconSet, forms, vanillaRaw, degrees, tool, mass);
     }
 
     /** Из материала делаются инструменты с этими параметрами. Без вызова инструментов нет. */
     public Material withTool(ToolStats stats) {
-        return new Material(id, displayName, color, oreColor, iconSet, forms, vanillaRaw, meltingPoint, stats);
+        return new Material(id, displayName, color, oreColor, iconSet, forms, vanillaRaw, meltingPoint, stats, mass);
+    }
+
+    /**
+     * Масса материала (для элементов атомная масса, для сплавов среднее по составу, как в GTCEu).
+     * От неё зависит время дробления и ковки. 0 значит «не задана».
+     */
+    public Material withMass(int mass) {
+        return new Material(id, displayName, color, oreColor, iconSet, forms, vanillaRaw, meltingPoint, tool, mass);
     }
 
     public boolean hasTools() {
