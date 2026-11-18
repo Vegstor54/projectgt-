@@ -18,7 +18,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
@@ -98,7 +97,7 @@ public class SteamBoilerBlockEntity extends BlockEntity {
 
     /** Подходит ли предмет как твёрдое топливо (горит в печи, но не ведро с лавой). */
     private static boolean isSolidFuel(ItemStack stack) {
-        return !(stack.getItem() instanceof BucketItem) && CommonHooks.getBurnTime(stack, null) > 0;
+        return !(stack.getItem() instanceof BucketItem) && stack.getBurnTime(null) > 0;
     }
 
     // --- Доступ снаружи ---
@@ -169,7 +168,7 @@ public class SteamBoilerBlockEntity extends BlockEntity {
         if (stack.isEmpty()) {
             return false;
         }
-        int ticks = CommonHooks.getBurnTime(stack, null);
+        int ticks = stack.getBurnTime(null);
         if (ticks <= 0) {
             return false;
         }
