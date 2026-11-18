@@ -16,5 +16,6 @@ public final class ClientMenus {
     @SubscribeEvent
     static void register(RegisterMenuScreensEvent event) {
         event.register(ModMenus.STEAM_MACHINE.get(), SteamMachineScreen::new);
+        event.register(ModMenus.BOILER.get(), BoilerScreen::new);
     }
 }

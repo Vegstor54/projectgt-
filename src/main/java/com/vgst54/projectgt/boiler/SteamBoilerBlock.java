@@ -28,7 +28,7 @@ import net.neoforged.neoforge.fluids.FluidUtil;
 /**
  * Блок одноблочного парового котла.
  * ПКМ с ведром/ёмкостью заливает воду (и топливо у жидкостного), с твёрдым топливом кладёт его в слот
- * (угольный), пустой рукой показывает статус.
+ * (угольный), пустой рукой открывает GUI.
  */
 public class SteamBoilerBlock extends Block implements EntityBlock {
     private final BoilerType type;
@@ -71,7 +71,7 @@ public class SteamBoilerBlock extends Block implements EntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
                                                BlockHitResult hit) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof SteamBoilerBlockEntity boiler) {
-            player.displayClientMessage(boiler.status(), true);
+            player.openMenu(boiler, buf -> buf.writeBoolean(boiler.itemHandler() != null));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
