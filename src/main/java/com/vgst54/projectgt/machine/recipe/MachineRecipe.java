@@ -73,13 +73,19 @@ public final class MachineRecipe implements Recipe<MachineRecipeInput> {
      */
     @Nullable
     public int[] plan(List<ItemStack> stacks) {
+        return plan(stacks, 1);
+    }
+
+    /** То же для times одновременных запусков рецепта (параллели): количества входов умножаются на times. */
+    @Nullable
+    public int[] plan(List<ItemStack> stacks, int times) {
         int[] left = new int[stacks.size()];
         for (int i = 0; i < left.length; i++) {
             left[i] = stacks.get(i).getCount();
         }
         int[] take = new int[stacks.size()];
         for (SizedIngredient input : inputs) {
-            int need = input.count();
+            int need = input.count() * times;
             for (int slot = 0; slot < left.length && need > 0; slot++) {
                 if (left[slot] > 0 && input.ingredient().test(stacks.get(slot))) {
                     int part = Math.min(need, left[slot]);
@@ -95,9 +101,35 @@ public final class MachineRecipe implements Recipe<MachineRecipeInput> {
         return take;
     }
 
-    /** Списывает входы из слотов машины. Возвращает false (и ничего не списывает), если входов не хватает. */
+    /** Сколько раз подряд (но не больше limit) входов хватает на рецепт, 0 если не хватает даже на один. */
+    public int maxParallels(List<ItemStack> stacks, int limit) {
+        for (int times = limit; times >= 1; times--) {
+            if (plan(stacks, times) != null) {
+                return times;
+            }
+        }
+        return 0;
+    }
+
+    /** Выходы одного запуска, умноженные на times (для параллелей). */
+    public List<ItemStack> copyOutputs(int times) {
+        List<ItemStack> copy = new ArrayList<>(outputs.size());
+        for (ItemStack stack : outputs) {
+            ItemStack scaled = stack.copy();
+            scaled.setCount(stack.getCount() * times);
+            copy.add(scaled);
+        }
+        return copy;
+    }
+
+    /** Списывает входы одного запуска из слотов машины. Возвращает false (и ничего не списывает), если не хватает. */
     public boolean consume(IItemHandler handler) {
-        int[] take = plan(MachineRecipeInput.of(handler).items());
+        return consume(handler, 1);
+    }
+
+    /** Списывает входы times запусков сразу. Возвращает false (и ничего не списывает), если не хватает. */
+    public boolean consume(IItemHandler handler, int times) {
+        int[] take = plan(MachineRecipeInput.of(handler).items(), times);
         if (take == null) {
             return false;
         }

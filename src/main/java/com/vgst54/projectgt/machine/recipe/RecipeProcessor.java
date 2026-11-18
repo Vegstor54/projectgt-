@@ -18,7 +18,7 @@ import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 /**
- * Рецептный движок одной машины. Вызывается каждый тик на сервере из блок-сущности.
+ * Рецептный движок одной машины или мультиблока. Вызывается каждый тик на сервере из блок-сущности.
  *
  * Цикл:
  * 1. Простой: ищем рецепт своего вида, который совпал по входам, проходит проверку тира ({@link RecipeScaling#accepts})
@@ -26,6 +26,11 @@ import net.neoforged.neoforge.items.ItemStackHandler;
  * 2. Работа: каждый тик берём энергию у {@link EnergySource}. Хватило на полный тик: прогресс +1.
  *    Не хватило: стоим (прогресс не теряется).
  * 3. Прогресс дошёл до длительности: кладём выходы в выходные слоты. Нет места: ждём, пока освободят.
+ *
+ * Параллели (как в GT): maxParallels это фиксированное число контроллера (у одиночных машин 1). При старте один и тот же
+ * рецепт запускается сразу N раз, где N = min(maxParallels, на сколько запусков хватает входов, на сколько влезают
+ * выходы). Входы, выходы и расход энергии (у пара mB) умножаются на N, длительность не меняется. Слоты люков
+ * ограничивают параллели через входы и выходы. Проверка тира смотрит на расход одного запуска.
  *
  * Энергия и тир задаются снаружи: {@link RecipeScaling} (электричество или пар) и {@link EnergySource}.
  */
@@ -35,6 +40,7 @@ public final class RecipeProcessor {
     private final IItemHandler inputs;
     private final IItemHandler outputs;
     private final EnergySource energy;
+    private final int maxParallels;
 
     @Nullable
     private MachineRecipe active;
@@ -46,15 +52,24 @@ public final class RecipeProcessor {
     private ResourceLocation pendingId;
     private int progress;
     private int duration;
+    /** Сколько запусков рецепта идёт сейчас. */
+    private int parallels;
+    /** Энергия за тик на все идущие запуски вместе. */
     private long energyPerTick;
 
     public RecipeProcessor(MachineType machine, RecipeScaling scaling, IItemHandler inputs, IItemHandler outputs,
                            EnergySource energy) {
+        this(machine, scaling, inputs, outputs, energy, 1);
+    }
+
+    public RecipeProcessor(MachineType machine, RecipeScaling scaling, IItemHandler inputs, IItemHandler outputs,
+                           EnergySource energy, int maxParallels) {
         this.machine = machine;
         this.scaling = scaling;
         this.inputs = inputs;
         this.outputs = outputs;
         this.energy = energy;
+        this.maxParallels = Math.max(1, maxParallels);
     }
 
     public boolean isActive() {
@@ -67,6 +82,11 @@ public final class RecipeProcessor {
 
     public int duration() {
         return duration;
+    }
+
+    /** Сколько запусков рецепта идёт сейчас (0 в простое). */
+    public int parallels() {
+        return parallels;
     }
 
     /** Один тик работы. Возвращает true, если состояние изменилось и блок-сущности нужно сохраниться. */
@@ -84,14 +104,15 @@ public final class RecipeProcessor {
             energy.extract(energyPerTick, false);
             progress++;
         }
-        if (progress >= duration && fits(active.outputs())) {
-            for (ItemStack stack : active.copyOutputs()) {
+        if (progress >= duration && fits(active.copyOutputs(parallels))) {
+            for (ItemStack stack : active.copyOutputs(parallels)) {
                 ItemHandlerHelper.insertItem(outputs, stack, false);
             }
             active = null;
             activeId = null;
             progress = 0;
             duration = 0;
+            parallels = 0;
         }
         return true;
     }
@@ -101,24 +122,30 @@ public final class RecipeProcessor {
         List<RecipeHolder<MachineRecipe>> all = level.getRecipeManager().getAllRecipesFor(ModMachineRecipes.type(machine).get());
         for (RecipeHolder<MachineRecipe> holder : all) {
             MachineRecipe recipe = holder.value();
-            if (!scaling.accepts(recipe.eut()) || !recipe.matches(input, level) || !fits(recipe.outputs())) {
+            if (!scaling.accepts(recipe.eut())) {
                 continue;
             }
-            if (!recipe.consume(inputs)) {
+            // Сначала по входам, затем урезаем так, чтобы выходы влезли.
+            int times = recipe.maxParallels(input.items(), maxParallels);
+            while (times > 0 && !fits(recipe.copyOutputs(times))) {
+                times--;
+            }
+            if (times == 0 || !recipe.consume(inputs, times)) {
                 continue;
             }
-            begin(recipe, holder.id());
+            begin(recipe, holder.id(), times);
             return true;
         }
         return false;
     }
 
-    private void begin(MachineRecipe recipe, ResourceLocation id) {
+    private void begin(MachineRecipe recipe, ResourceLocation id, int times) {
         active = recipe;
         activeId = id;
         progress = 0;
+        parallels = times;
         duration = scaling.duration(recipe.duration());
-        energyPerTick = scaling.energyPerTick(recipe.eut());
+        energyPerTick = scaling.energyPerTick(recipe.eut()) * times;
     }
 
     /** Влезут ли все выходы в выходные слоты (проверка на копии, поэтому два выхода в один слот считаются честно). */
@@ -141,11 +168,12 @@ public final class RecipeProcessor {
         if (id == null) {
             return;
         }
+        int savedProgress = progress;
+        int savedParallels = parallels;
         level.getRecipeManager().byKey(id).ifPresent(holder -> {
             if (holder.value() instanceof MachineRecipe recipe && recipe.machine() == machine) {
-                int saved = progress;
-                begin(recipe, id);
-                progress = Math.min(saved, duration);
+                begin(recipe, id, Math.max(1, savedParallels));
+                progress = Math.min(savedProgress, duration);
             }
         });
         // Рецепт пропал (убрали датапаком): входы уже списаны, потерянный прогресс не восстанавливаем.
@@ -153,6 +181,7 @@ public final class RecipeProcessor {
             activeId = null;
             progress = 0;
             duration = 0;
+            parallels = 0;
         }
     }
 
@@ -160,6 +189,7 @@ public final class RecipeProcessor {
 
     public void save(CompoundTag tag) {
         tag.putInt("Progress", progress);
+        tag.putInt("Parallels", parallels);
         if (activeId != null) {
             tag.putString("Recipe", activeId.toString());
         }
@@ -167,6 +197,7 @@ public final class RecipeProcessor {
 
     public void load(CompoundTag tag) {
         progress = tag.getInt("Progress");
+        parallels = tag.getInt("Parallels");
         active = null;
         activeId = null;
         pendingId = tag.contains("Recipe") ? ResourceLocation.tryParse(tag.getString("Recipe")) : null;
