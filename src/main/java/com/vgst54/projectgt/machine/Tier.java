@@ -2,8 +2,8 @@ package com.vgst54.projectgt.machine;
 
 /**
  * Тир машин. Напряжение в EU/t на один ампер, шаг ×4 как в GregTech.
- * SV (steam voltage) стоит на месте ULV: у него обычное напряжение 8 EU/t, исключений в логике нет.
- * Паровые машины просто берут энергию из пара (см. {@link SteamPressure}).
+ * SV (steam voltage) это заглушка на месте ULV, как в GT: паровые машины тянут рецепты до LV
+ * (см. {@link SteamPressure#MAX_RECIPE_EUT}), своей логики на SV нет.
  */
 public enum Tier {
     SV("SV", 8),
