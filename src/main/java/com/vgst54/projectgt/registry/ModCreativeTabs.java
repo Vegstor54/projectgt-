@@ -81,8 +81,10 @@ public final class ModCreativeTabs {
                     .title(Component.translatable(MACHINES_TITLE_KEY))
                     .withTabsBefore(CreativeModeTabs.COMBAT)
                     .icon(() -> ModBlocks.boilers().findFirst().orElseThrow().item().get().getDefaultInstance())
-                    .displayItems((params, output) ->
-                            ModBlocks.boilers().forEach(boiler -> output.accept(boiler.item().get())))
+                    .displayItems((params, output) -> {
+                        ModBlocks.boilers().forEach(boiler -> output.accept(boiler.item().get()));
+                        ModBlocks.steamMachines().forEach(machine -> output.accept(machine.item().get()));
+                    })
                     .build());
 
     private ModCreativeTabs() {}

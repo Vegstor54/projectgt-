@@ -2,6 +2,7 @@ package com.vgst54.projectgt.registry;
 
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.boiler.SteamBoilerBlockEntity;
+import com.vgst54.projectgt.machine.SteamMachineBlockEntity;
 import com.vgst54.projectgt.pipe.FluidPipeBlockEntity;
 import com.vgst54.projectgt.pipe.ItemPipeBlockEntity;
 
@@ -34,6 +35,13 @@ public final class ModBlockEntities {
             TYPES.register("steam_boiler", () -> BlockEntityType.Builder.of(
                     SteamBoilerBlockEntity::new,
                     ModBlocks.boilers().map(boiler -> (Block) boiler.block().get()).toArray(Block[]::new)
+            ).build(null));
+
+    /** Одна блок-сущность на все паровые машины. */
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SteamMachineBlockEntity>> STEAM_MACHINE =
+            TYPES.register("steam_machine", () -> BlockEntityType.Builder.of(
+                    SteamMachineBlockEntity::new,
+                    ModBlocks.steamMachines().map(machine -> (Block) machine.block().get()).toArray(Block[]::new)
             ).build(null));
 
     private ModBlockEntities() {}

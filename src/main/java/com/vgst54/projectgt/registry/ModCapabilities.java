@@ -23,5 +23,10 @@ public final class ModCapabilities {
                 (boiler, side) -> boiler.fluidHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STEAM_BOILER.get(),
                 (boiler, side) -> boiler.itemHandler());
+        // Паровая машина: пар внутрь, предметы во вход и из выхода.
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.STEAM_MACHINE.get(),
+                (machine, side) -> machine.fluidHandler());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STEAM_MACHINE.get(),
+                (machine, side) -> machine.itemHandler());
     }
 }
