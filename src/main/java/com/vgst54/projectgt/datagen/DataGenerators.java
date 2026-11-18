@@ -539,8 +539,10 @@ public final class DataGenerators {
                             List.of(new ItemStack(ModItems.get(material, MaterialForm.DUST).get())), 2, 400);
                 }
                 if (material.has(MaterialForm.PLATE)) {
-                    machineRecipe(output, MachineType.FORGE_HAMMER, material.id() + "_ingot_to_plate", List.of(ingot),
-                            List.of(new ItemStack(ModItems.get(material, MaterialForm.PLATE).get())), 16, 100);
+                    // Как в GT: три слитка дают две пластины.
+                    machineRecipe(output, MachineType.FORGE_HAMMER, material.id() + "_ingots_to_plates",
+                            List.of(SizedIngredient.of(MaterialForm.INGOT.tag(material), 3)),
+                            List.of(new ItemStack(ModItems.get(material, MaterialForm.PLATE).get(), 2)), 16, 100);
                 }
             }
             // Компрессор: девять штук в ванильный блок.
