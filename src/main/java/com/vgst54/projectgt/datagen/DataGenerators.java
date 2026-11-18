@@ -370,6 +370,8 @@ public final class DataGenerators {
             add("tooltip.projectgt.boiler.warmup", "Warm-up: %s s");
             add("message.projectgt.boiler.status", "Heat: %s%% | Steam: %s mB | Water: %s mB");
             add("gui.projectgt.machine.steam", "Steam: %s / %s mB");
+            add("jei.projectgt.eut", "%s EU/t (%s)");
+            add("jei.projectgt.duration", "%s s");
             add("gui.projectgt.boiler.water", "Water: %s / %s mB");
             add("gui.projectgt.boiler.heat", "Heat: %s K");
             add("gui.projectgt.boiler.steam_from", "Steam from %s K");
