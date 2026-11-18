@@ -9,6 +9,9 @@ import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.block.StoneType;
 import com.vgst54.projectgt.boiler.BoilerType;
 import com.vgst54.projectgt.boiler.SteamBoilerBlock;
+import com.vgst54.projectgt.machine.SteamMachineBlock;
+import com.vgst54.projectgt.machine.SteamPressure;
+import com.vgst54.projectgt.machine.recipe.MachineType;
 import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.Materials;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
@@ -46,6 +49,20 @@ public final class ModBlocks {
     /** Паровой котёл: вид (чем греется × давление), блок и предмет-блок. */
     public record Boiler(BoilerType type, DeferredBlock<SteamBoilerBlock> block, DeferredItem<BlockItem> item) {}
 
+    /** Паровая машина: вид (дробитель, экстрактор...) × давление, блок и предмет-блок. */
+    public record SteamMachine(MachineType type, SteamPressure pressure, DeferredBlock<SteamMachineBlock> block,
+                               DeferredItem<BlockItem> item) {
+        /** id блока, например low_pressure_steam_forge_hammer. */
+        public static String id(MachineType type, SteamPressure pressure) {
+            return (pressure == SteamPressure.HIGH ? "high_pressure_steam_" : "low_pressure_steam_") + type.id();
+        }
+
+        public String displayName() {
+            return (pressure == SteamPressure.HIGH ? "High Pressure Steam " : "Low Pressure Steam ") + type.displayName();
+        }
+    }
+
+    private static final List<SteamMachine> STEAM_MACHINES = new ArrayList<>();
     private static final List<Boiler> BOILERS = new ArrayList<>();
     private static final List<ItemPipe> ITEM_PIPES = new ArrayList<>();
     private static final List<OreBlock> ORES = new ArrayList<>();
@@ -110,7 +127,29 @@ public final class ModBlocks {
         }
     }
 
+    static {
+        for (SteamPressure pressure : SteamPressure.values()) {
+            for (MachineType type : MachineType.values()) {
+                String id = SteamMachine.id(type, pressure);
+                DeferredBlock<SteamMachineBlock> block = BLOCKS.register(id, () -> new SteamMachineBlock(
+                        BlockBehaviour.Properties.of()
+                                .mapColor(MapColor.METAL)
+                                .strength(3.0f, 6.0f)
+                                .sound(SoundType.METAL)
+                                .requiresCorrectToolForDrops(),
+                        type, pressure));
+                DeferredItem<BlockItem> item = ModItems.ITEMS.registerSimpleBlockItem(id, block);
+                STEAM_MACHINES.add(new SteamMachine(type, pressure, block, item));
+            }
+        }
+    }
+
     private ModBlocks() {}
+
+    /** Все паровые машины: сначала низкое давление, затем высокое, внутри по порядку {@link MachineType}. */
+    public static Stream<SteamMachine> steamMachines() {
+        return Collections.unmodifiableList(STEAM_MACHINES).stream();
+    }
 
     /** Все паровые котлы: сначала низкое давление, затем высокое. */
     public static Stream<Boiler> boilers() {

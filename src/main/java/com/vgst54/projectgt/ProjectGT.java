@@ -10,6 +10,7 @@ import com.vgst54.projectgt.registry.ModCreativeTabs;
 import com.vgst54.projectgt.registry.ModFluids;
 import com.vgst54.projectgt.registry.ModItems;
 import com.vgst54.projectgt.registry.ModMachineRecipes;
+import com.vgst54.projectgt.registry.ModMenus;
 import com.vgst54.projectgt.worldgen.ModFeatures;
 
 import net.neoforged.bus.api.IEventBus;
@@ -29,6 +30,7 @@ public class ProjectGT {
         ModFluids.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
         ModBlockEntities.TYPES.register(modEventBus);
+        ModMenus.MENUS.register(modEventBus);
         ModCreativeTabs.TABS.register(modEventBus);
         ModBiomeModifiers.SERIALIZERS.register(modEventBus);
         ModFeatures.FEATURES.register(modEventBus);

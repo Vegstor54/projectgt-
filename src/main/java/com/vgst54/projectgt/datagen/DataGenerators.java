@@ -18,6 +18,9 @@ import com.vgst54.projectgt.material.Materials;
 import com.vgst54.projectgt.material.OreTags;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.ItemPipeBlock;
+import com.vgst54.projectgt.machine.SteamPressure;
+import com.vgst54.projectgt.machine.recipe.MachineRecipe;
+import com.vgst54.projectgt.machine.recipe.MachineType;
 import com.vgst54.projectgt.pipe.PipeSize;
 import com.vgst54.projectgt.registry.ModBlocks;
 import com.vgst54.projectgt.registry.ModCreativeTabs;
@@ -56,6 +59,7 @@ import net.neoforged.neoforge.client.model.generators.ModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
@@ -137,6 +141,21 @@ public final class DataGenerators {
             });
             registerPipes();
             registerBoilers();
+            registerSteamMachines();
+        }
+
+        /** Паровые машины: лицо block/machine/<id>_front, бок и верх по давлению (low_pressure_side, low_pressure_top). */
+        private void registerSteamMachines() {
+            ModBlocks.steamMachines().forEach(machine -> {
+                String pressure = machine.pressure() == SteamPressure.HIGH ? "high" : "low";
+                String id = machine.block().getId().getPath();
+                var model = models().orientable(id,
+                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + pressure + "_pressure_side"),
+                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + id + "_front"),
+                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + pressure + "_pressure_top"));
+                horizontalBlock(machine.block().get(), model);
+                simpleBlockItem(machine.block().get(), model);
+            });
         }
 
         /** Котлы: куб с одной текстурой на вид (block/boiler/<id>). */
@@ -290,6 +309,7 @@ public final class DataGenerators {
             ModBlocks.fluidPipes().forEach(pipe -> dropSelf(pipe.block().get()));
             ModBlocks.itemPipes().forEach(pipe -> dropSelf(pipe.block().get()));
             ModBlocks.boilers().forEach(boiler -> dropSelf(boiler.block().get()));
+            ModBlocks.steamMachines().forEach(machine -> dropSelf(machine.block().get()));
         }
 
         @Override
@@ -298,7 +318,8 @@ public final class DataGenerators {
                     ModBlocks.ores().map(ore -> ore.block().get()),
                     ModBlocks.fluidPipes().map(pipe -> (Block) pipe.block().get()),
                     ModBlocks.itemPipes().map(pipe -> (Block) pipe.block().get()),
-                    ModBlocks.boilers().map(boiler -> (Block) boiler.block().get()))
+                    ModBlocks.boilers().map(boiler -> (Block) boiler.block().get()),
+                    ModBlocks.steamMachines().map(machine -> (Block) machine.block().get()))
                     .flatMap(blocks -> blocks).toList();
         }
     }
@@ -348,6 +369,7 @@ public final class DataGenerators {
             add("tooltip.projectgt.boiler.steam_output", "Steam output: %s mB/t at full heat");
             add("tooltip.projectgt.boiler.warmup", "Warm-up: %s s");
             add("message.projectgt.boiler.status", "Heat: %s%% | Steam: %s mB | Water: %s mB");
+            add("gui.projectgt.machine.steam", "Steam: %s / %s mB");
 
             // Экран настроек (ключи: <modid>.configuration.<путь опции>)
             add("projectgt.configuration.title", "Project-GT+++ Configs");
@@ -364,6 +386,7 @@ public final class DataGenerators {
             ModBlocks.fluidPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
             ModBlocks.itemPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
             ModBlocks.boilers().forEach(boiler -> addBlock(boiler.block(), boiler.type().displayName()));
+            ModBlocks.steamMachines().forEach(machine -> addBlock(machine.block(), machine.displayName()));
         }
     }
 
@@ -472,6 +495,7 @@ public final class DataGenerators {
             });
 
             buildAlloyRecipes(output);
+            buildMachineRecipes(output);
         }
 
         /**
@@ -487,6 +511,44 @@ public final class DataGenerators {
                     .unlockedBy("has_copper_dust", has(copperDust))
                     .unlockedBy("has_tin_dust", has(tinDust))
                     .save(output, ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "alloy/bronze_dust"));
+        }
+
+        private static void machineRecipe(RecipeOutput output, MachineType machine, String name,
+                                          List<SizedIngredient> inputs, List<ItemStack> outputs, int eut, int ticks) {
+            output.accept(ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, machine.id() + "/" + name),
+                    new MachineRecipe(machine, inputs, outputs, eut, ticks), null);
+        }
+
+        /**
+         * Рецепты машин. Значения черновые, баланс правится здесь.
+         * Дробитель и компрессор тянут 2 EU/t, кузнечный молот 16 EU/t: так паровые версии тратят 2/4 и 16/32 mB/t,
+         * как в GTCEu. Рецептов экстрактора пока нет: ему нужны жидкости или резина.
+         * Ванильные слитки (железо, медь, золото) лежат в тегах c:ingots/&lt;материал&gt;, как и слитки мода.
+         */
+        private void buildMachineRecipes(RecipeOutput output) {
+            for (Material material : List.of(Materials.IRON, Materials.COPPER, Materials.GOLD, Materials.TIN,
+                    Materials.NICKEL, Materials.ZINC, Materials.BRONZE, Materials.STEEL)) {
+                SizedIngredient ingot = SizedIngredient.of(MaterialForm.INGOT.tag(material), 1);
+                if (material.has(MaterialForm.DUST)) {
+                    machineRecipe(output, MachineType.MACERATOR, material.id() + "_ingot_to_dust", List.of(ingot),
+                            List.of(new ItemStack(ModItems.get(material, MaterialForm.DUST).get())), 2, 400);
+                }
+                if (material.has(MaterialForm.PLATE)) {
+                    machineRecipe(output, MachineType.FORGE_HAMMER, material.id() + "_ingot_to_plate", List.of(ingot),
+                            List.of(new ItemStack(ModItems.get(material, MaterialForm.PLATE).get())), 16, 100);
+                }
+            }
+            // Компрессор: девять штук в ванильный блок.
+            machineRecipe(output, MachineType.COMPRESSOR, "iron_block", List.of(SizedIngredient.of(Items.IRON_INGOT, 9)),
+                    List.of(new ItemStack(Items.IRON_BLOCK)), 2, 300);
+            machineRecipe(output, MachineType.COMPRESSOR, "copper_block", List.of(SizedIngredient.of(Items.COPPER_INGOT, 9)),
+                    List.of(new ItemStack(Items.COPPER_BLOCK)), 2, 300);
+            machineRecipe(output, MachineType.COMPRESSOR, "gold_block", List.of(SizedIngredient.of(Items.GOLD_INGOT, 9)),
+                    List.of(new ItemStack(Items.GOLD_BLOCK)), 2, 300);
+            machineRecipe(output, MachineType.COMPRESSOR, "coal_block", List.of(SizedIngredient.of(Items.COAL, 9)),
+                    List.of(new ItemStack(Items.COAL_BLOCK)), 2, 300);
+            machineRecipe(output, MachineType.COMPRESSOR, "redstone_block", List.of(SizedIngredient.of(Items.REDSTONE, 9)),
+                    List.of(new ItemStack(Items.REDSTONE_BLOCK)), 2, 300);
         }
     }
 
@@ -506,6 +568,7 @@ public final class DataGenerators {
             ModBlocks.fluidPipes().forEach(pipe -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(pipe.block().get()));
             ModBlocks.itemPipes().forEach(pipe -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(pipe.block().get()));
             ModBlocks.boilers().forEach(boiler -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(boiler.block().get()));
+            ModBlocks.steamMachines().forEach(machine -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(machine.block().get()));
             for (Material material : Materials.all()) {
                 if (material.hasOre()) {
                     tag(OreTags.ALL_BLOCKS).addTag(OreTags.block(material));
