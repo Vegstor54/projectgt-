@@ -5,6 +5,7 @@ import com.vgst54.projectgt.machine.SteamMachineBlockEntity;
 import com.vgst54.projectgt.machine.recipe.MachineRecipe;
 import com.vgst54.projectgt.machine.recipe.RecipeProcessor;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -46,6 +47,7 @@ enum MachineProvider implements IBlockComponentProvider, IServerDataProvider<Blo
         data.putInt("Progress", processor.progress());
         data.putInt("Duration", processor.duration());
         data.putInt("Parallels", processor.parallels());
+        data.putBoolean("NoPower", processor.isNoPower());
     }
 
     @Override
@@ -80,5 +82,8 @@ enum MachineProvider implements IBlockComponentProvider, IServerDataProvider<Blo
         Component text = Component.translatable("jade.projectgt.progress",
                 Math.round(fraction * 100), String.format("%.1f", progress / 20.0), String.format("%.1f", duration / 20.0));
         tooltip.add(helper.progress(fraction, text, helper.progressStyle().color(0xFF3FA13F), BoxStyle.getNestedBox(), false));
+        if (data.getBoolean("NoPower")) {
+            tooltip.add(Component.translatable("jade.projectgt.no_power").withStyle(ChatFormatting.RED));
+        }
     }
 }
