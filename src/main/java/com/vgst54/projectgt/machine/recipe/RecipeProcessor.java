@@ -98,6 +98,11 @@ public final class RecipeProcessor {
         return activeId != null ? activeId : pendingId;
     }
 
+    /** Рецепт идёт и питания хватает (для анимации лица). */
+    public boolean isWorking() {
+        return active != null && !noPower;
+    }
+
     /** Стоит ли рецепт из-за нехватки энергии. */
     public boolean isNoPower() {
         return active != null && noPower;

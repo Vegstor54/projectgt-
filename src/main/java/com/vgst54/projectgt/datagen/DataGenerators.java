@@ -18,6 +18,7 @@ import com.vgst54.projectgt.material.Materials;
 import com.vgst54.projectgt.material.OreTags;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.ItemPipeBlock;
+import com.vgst54.projectgt.machine.SteamMachineBlock;
 import com.vgst54.projectgt.machine.SteamPressure;
 import com.vgst54.projectgt.machine.recipe.MachineRecipe;
 import com.vgst54.projectgt.machine.recipe.MachineType;
@@ -144,17 +145,47 @@ public final class DataGenerators {
             registerSteamMachines();
         }
 
-        /** Паровые машины: лицо block/machine/<id>_front, бок и верх по давлению (low_pressure_side, low_pressure_top). */
+        /**
+         * Паровые машины: корпус (бок и верх по давлению: low_pressure_side, low_pressure_top) и поверх него
+         * оверлей лица, общий для обоих давлений: block/machine/overlay/<вид>_front и _front_active (анимация).
+         * Модели для idle и active, поворот по FACING.
+         */
+        /** Куб-корпус плюс слой оверлея на северной (лицевой) грани, чуть выступающий, чтобы не мерцал. */
+        private BlockModelBuilder machineModel(String name, ResourceLocation side, ResourceLocation top, ResourceLocation overlay) {
+            var model = models().getBuilder(name)
+                    .parent(new ModelFile.UncheckedModelFile("minecraft:block/block"))
+                    .texture("particle", side)
+                    .texture("side", side)
+                    .texture("top", top)
+                    .texture("overlay", overlay);
+            model.element().from(0, 0, 0).to(16, 16, 16)
+                    .face(Direction.DOWN).texture("#top").cullface(Direction.DOWN).end()
+                    .face(Direction.UP).texture("#top").cullface(Direction.UP).end()
+                    .face(Direction.NORTH).texture("#side").cullface(Direction.NORTH).end()
+                    .face(Direction.SOUTH).texture("#side").cullface(Direction.SOUTH).end()
+                    .face(Direction.WEST).texture("#side").cullface(Direction.WEST).end()
+                    .face(Direction.EAST).texture("#side").cullface(Direction.EAST).end()
+                    .end();
+            model.element().from(-0.01f, -0.01f, -0.01f).to(16.01f, 16.01f, 16.01f)
+                    .face(Direction.NORTH).texture("#overlay").cullface(Direction.NORTH).end()
+                    .end();
+            return model;
+        }
+
         private void registerSteamMachines() {
             ModBlocks.steamMachines().forEach(machine -> {
                 String pressure = machine.pressure() == SteamPressure.HIGH ? "high" : "low";
                 String id = machine.block().getId().getPath();
-                var model = models().orientable(id,
-                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + pressure + "_pressure_side"),
-                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + id + "_front"),
-                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + pressure + "_pressure_top"));
-                horizontalBlock(machine.block().get(), model);
-                simpleBlockItem(machine.block().get(), model);
+                var side = ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + pressure + "_pressure_side");
+                var top = ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + pressure + "_pressure_top");
+                String type = machine.type().id();
+                var idle = machineModel(id, side, top,
+                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + type + "_front"));
+                var active = machineModel(id + "_active", side, top,
+                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + type + "_front_active"));
+                horizontalBlock(machine.block().get(),
+                        state -> state.getValue(SteamMachineBlock.ACTIVE) ? active : idle);
+                simpleBlockItem(machine.block().get(), idle);
             });
         }
 
