@@ -94,6 +94,11 @@ public class SteamMachineBlockEntity extends BlockEntity implements MenuProvider
         this.processor = new RecipeProcessor(machine, RecipeScaling.steam(pressure), input, output, new SteamSource(steam));
     }
 
+    /** Движок рецептов (для чтения состояния: прогресс, рецепт, параллели). */
+    public RecipeProcessor processor() {
+        return processor;
+    }
+
     public MachineType machine() {
         return machine;
     }

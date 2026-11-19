@@ -84,6 +84,12 @@ public final class RecipeProcessor {
         return duration;
     }
 
+    /** id рецепта в работе или null в простое. */
+    @Nullable
+    public ResourceLocation recipeId() {
+        return activeId != null ? activeId : pendingId;
+    }
+
     /** Сколько запусков рецепта идёт сейчас (0 в простое). */
     public int parallels() {
         return parallels;
