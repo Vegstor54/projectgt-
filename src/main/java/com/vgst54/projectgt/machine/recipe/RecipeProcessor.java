@@ -57,6 +57,8 @@ public final class RecipeProcessor {
     private int progress;
     /** Сколько тиков ещё ждать после возвращения питания. Не сохраняется: после загрузки мира пауза не нужна. */
     private int restartDelay;
+    /** Рецепт стоит из-за нехватки энергии (для индикации, не сохраняется). */
+    private boolean noPower;
     private int duration;
     /** Сколько запусков рецепта идёт сейчас. */
     private int parallels;
@@ -96,6 +98,11 @@ public final class RecipeProcessor {
         return activeId != null ? activeId : pendingId;
     }
 
+    /** Стоит ли рецепт из-за нехватки энергии. */
+    public boolean isNoPower() {
+        return active != null && noPower;
+    }
+
     /** Сколько запусков рецепта идёт сейчас (0 в простое). */
     public int parallels() {
         return parallels;
@@ -112,11 +119,13 @@ public final class RecipeProcessor {
         if (progress < duration) {
             if (energy.extract(energyPerTick, true) < energyPerTick) {
                 // Питание пропало: прогресс сбрасывается, входы остаются списанными.
-                boolean changed = progress != 0;
+                boolean changed = progress != 0 || !noPower;
+                noPower = true;
                 progress = 0;
                 restartDelay = RESTART_DELAY;
                 return changed;
             }
+            noPower = false;
             if (restartDelay > 0) {
                 // Питание вернулось: ждём паузу, потом рецепт идёт заново с нуля.
                 restartDelay--;
