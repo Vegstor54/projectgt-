@@ -18,15 +18,18 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * Одноблочная паровая машина: вид (дробитель, экстрактор, компрессор, кузнечный молот) × давление.
- * Лицевая сторона смотрит на игрока при установке. ПКМ открывает меню.
+ * Лицевая сторона смотрит на игрока при установке; пока идёт рецепт, лицо анимированное. ПКМ открывает меню.
  */
 public class SteamMachineBlock extends Block implements EntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    /** Машина работает: лицо рисуется анимированным (оверлей _active). */
+    public static final BooleanProperty ACTIVE = BlockStateProperties.LIT;
 
     private final MachineType machine;
     private final SteamPressure pressure;
@@ -35,7 +38,7 @@ public class SteamMachineBlock extends Block implements EntityBlock {
         super(properties);
         this.machine = machine;
         this.pressure = pressure;
-        registerDefaultState(stateDefinition.any().setValue(FACING, net.minecraft.core.Direction.NORTH));
+        registerDefaultState(stateDefinition.any().setValue(FACING, net.minecraft.core.Direction.NORTH).setValue(ACTIVE, false));
     }
 
     public MachineType machine() {
@@ -48,7 +51,7 @@ public class SteamMachineBlock extends Block implements EntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, ACTIVE);
     }
 
     @Nullable
