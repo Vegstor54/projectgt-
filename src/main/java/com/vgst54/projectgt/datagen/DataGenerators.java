@@ -370,6 +370,10 @@ public final class DataGenerators {
             add("tooltip.projectgt.boiler.warmup", "Warm-up: %s s");
             add("message.projectgt.boiler.status", "Heat: %s%% | Steam: %s mB | Water: %s mB");
             add("gui.projectgt.machine.steam", "Steam: %s / %s mB");
+            add("jade.projectgt.recipe", "Recipe:");
+            add("jade.projectgt.progress", "%s%% (%s / %s s)");
+            add("jade.projectgt.parallels", "Parallels: %s");
+            add("config.jade.plugin_projectgt.steam_machine", "Steam Machine");
             add("jei.projectgt.eut", "%s EU/t (%s)");
             add("jei.projectgt.duration", "%s s");
             add("gui.projectgt.boiler.water", "Water: %s / %s mB");
