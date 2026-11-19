@@ -24,7 +24,8 @@ import net.neoforged.neoforge.items.ItemStackHandler;
  * 1. Простой: ищем рецепт своего вида, который совпал по входам, проходит проверку тира ({@link RecipeScaling#accepts}),
  *    чьи выходы влезут в выходные слоты и на чей первый тик хватает энергии. Нашли: списываем входы, запоминаем рецепт.
  * 2. Работа: каждый тик берём энергию у {@link EnergySource}. Хватило на полный тик: прогресс +1.
- *    Не хватило: стоим (прогресс не теряется).
+ *    Не хватило: прогресс сбрасывается в 0 (входы не возвращаются), после возвращения питания ждём
+ *    {@link #RESTART_DELAY} тиков и рецепт идёт заново.
  * 3. Прогресс дошёл до длительности: кладём выходы в выходные слоты. Нет места: ждём, пока освободят.
  *
  * Параллели (как в GT): maxParallels это фиксированное число контроллера (у одиночных машин 1). При старте один и тот же
@@ -35,6 +36,9 @@ import net.neoforged.neoforge.items.ItemStackHandler;
  * Энергия и тир задаются снаружи: {@link RecipeScaling} (электричество или пар) и {@link EnergySource}.
  */
 public final class RecipeProcessor {
+    /** Пауза в тиках после пропажи питания, прежде чем рецепт начнётся заново (20 тиков = 1 секунда). */
+    public static final int RESTART_DELAY = 40;
+
     private final MachineType machine;
     private final RecipeScaling scaling;
     private final IItemHandler inputs;
@@ -51,6 +55,8 @@ public final class RecipeProcessor {
     @Nullable
     private ResourceLocation pendingId;
     private int progress;
+    /** Сколько тиков ещё ждать после возвращения питания. Не сохраняется: после загрузки мира пауза не нужна. */
+    private int restartDelay;
     private int duration;
     /** Сколько запусков рецепта идёт сейчас. */
     private int parallels;
@@ -105,6 +111,15 @@ public final class RecipeProcessor {
         }
         if (progress < duration) {
             if (energy.extract(energyPerTick, true) < energyPerTick) {
+                // Питание пропало: прогресс сбрасывается, входы остаются списанными.
+                boolean changed = progress != 0;
+                progress = 0;
+                restartDelay = RESTART_DELAY;
+                return changed;
+            }
+            if (restartDelay > 0) {
+                // Питание вернулось: ждём паузу, потом рецепт идёт заново с нуля.
+                restartDelay--;
                 return false;
             }
             energy.extract(energyPerTick, false);
