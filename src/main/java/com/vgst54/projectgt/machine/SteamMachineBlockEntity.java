@@ -18,15 +18,18 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 /**
@@ -110,6 +113,27 @@ public class SteamMachineBlockEntity extends BlockEntity implements MenuProvider
 
     // --- Доступ снаружи ---
 
+    /** Раз в сколько тиков пробуем выгрузить результат в соседний блок. */
+    private static final int OUTPUT_INTERVAL = 10;
+
+    /** Автовывод: выходной слот выгружается в блок на стороне вывода, если у него есть приёмник предметов. */
+    private void autoOutput() {
+        if (level == null || level.getGameTime() % OUTPUT_INTERVAL != 0 || output.getStackInSlot(0).isEmpty()) {
+            return;
+        }
+        Direction side = getBlockState().getValue(SteamMachineBlock.OUTPUT);
+        IItemHandler target = level.getCapability(Capabilities.ItemHandler.BLOCK, worldPosition.relative(side), side.getOpposite());
+        if (target == null) {
+            return;
+        }
+        ItemStack stack = output.getStackInSlot(0);
+        ItemStack rest = ItemHandlerHelper.insertItem(target, stack.copy(), false);
+        int moved = stack.getCount() - rest.getCount();
+        if (moved > 0) {
+            output.extractItem(0, moved, false);
+        }
+    }
+
     public IFluidHandler fluidHandler() {
         return fluidHandler;
     }
@@ -127,6 +151,7 @@ public class SteamMachineBlockEntity extends BlockEntity implements MenuProvider
         if (processor.tick(level)) {
             setChanged();
         }
+        autoOutput();
         BlockState state = getBlockState();
         boolean working = processor.isWorking();
         if (state.getValue(SteamMachineBlock.ACTIVE) != working) {
