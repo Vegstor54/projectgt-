@@ -158,6 +158,8 @@ public final class DataGenerators {
                                                ResourceLocation ventTexture, @Nullable Direction vent) {
             var model = models().getBuilder(name)
                     .parent(new ModelFile.UncheckedModelFile("minecraft:block/block"))
+                    // Оверлеи с прозрачными пикселями: без cutout прозрачное рисуется чёрным.
+                    .renderType("minecraft:cutout")
                     .texture("particle", side)
                     .texture("side", side)
                     .texture("top", top)
