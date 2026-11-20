@@ -2,6 +2,8 @@ package com.vgst54.projectgt.machine.recipe;
 
 import java.util.List;
 
+import java.util.function.BooleanSupplier;
+
 import javax.annotation.Nullable;
 
 import com.vgst54.projectgt.machine.EnergySource;
@@ -54,6 +56,10 @@ public final class RecipeProcessor {
     /** После загрузки мира рецепт восстанавливаем по id, когда появится level. */
     @Nullable
     private ResourceLocation pendingId;
+    /** Можно ли запускать новый рецепт (вытяжка паровой машины может быть перекрыта). По умолчанию всегда да. */
+    private BooleanSupplier canStart = () -> true;
+    /** Вызывается, когда рецепт завершён и выходы выложены. */
+    private Runnable onComplete = () -> {};
     private int progress;
     /** Сколько тиков ещё ждать после возвращения питания. Не сохраняется: после загрузки мира пауза не нужна. */
     private int restartDelay;
@@ -78,6 +84,12 @@ public final class RecipeProcessor {
         this.outputs = outputs;
         this.energy = energy;
         this.maxParallels = Math.max(1, maxParallels);
+    }
+
+    /** Условия машины: можно ли начать рецепт и что делать по завершении (например, выпустить пар). */
+    public void setHooks(BooleanSupplier canStart, Runnable onComplete) {
+        this.canStart = canStart;
+        this.onComplete = onComplete;
     }
 
     public boolean isActive() {
@@ -148,11 +160,15 @@ public final class RecipeProcessor {
             progress = 0;
             duration = 0;
             parallels = 0;
+            onComplete.run();
         }
         return true;
     }
 
     private boolean start(Level level) {
+        if (!canStart.getAsBoolean()) {
+            return false;
+        }
         MachineRecipeInput input = MachineRecipeInput.of(inputs);
         List<RecipeHolder<MachineRecipe>> all = level.getRecipeManager().getAllRecipesFor(ModMachineRecipes.type(machine).get());
         for (RecipeHolder<MachineRecipe> holder : all) {

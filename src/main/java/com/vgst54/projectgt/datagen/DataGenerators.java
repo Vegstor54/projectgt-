@@ -9,6 +9,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import javax.annotation.Nullable;
+
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.item.ToolType;
 import com.vgst54.projectgt.material.Heat;
@@ -152,13 +154,15 @@ public final class DataGenerators {
          * Модели для idle и active, поворот по FACING.
          */
         /** Куб-корпус плюс слой оверлея на северной (лицевой) грани, чуть выступающий, чтобы не мерцал. */
-        private BlockModelBuilder machineModel(String name, ResourceLocation side, ResourceLocation top, ResourceLocation overlay) {
+        private BlockModelBuilder machineModel(String name, ResourceLocation side, ResourceLocation top, ResourceLocation overlay,
+                                               ResourceLocation ventTexture, @Nullable Direction vent) {
             var model = models().getBuilder(name)
                     .parent(new ModelFile.UncheckedModelFile("minecraft:block/block"))
                     .texture("particle", side)
                     .texture("side", side)
                     .texture("top", top)
-                    .texture("overlay", overlay);
+                    .texture("overlay", overlay)
+                    .texture("vent", ventTexture);
             model.element().from(0, 0, 0).to(16, 16, 16)
                     .face(Direction.DOWN).texture("#top").cullface(Direction.DOWN).end()
                     .face(Direction.UP).texture("#top").cullface(Direction.UP).end()
@@ -170,6 +174,11 @@ public final class DataGenerators {
             model.element().from(-0.01f, -0.01f, -0.01f).to(16.01f, 16.01f, 16.01f)
                     .face(Direction.NORTH).texture("#overlay").cullface(Direction.NORTH).end()
                     .end();
+            if (vent != null) {
+                model.element().from(-0.01f, -0.01f, -0.01f).to(16.01f, 16.01f, 16.01f)
+                        .face(vent).texture("#vent").cullface(vent).end()
+                        .end();
+            }
             return model;
         }
 
@@ -180,15 +189,29 @@ public final class DataGenerators {
                 var side = ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + pressure + "_pressure_side");
                 var top = ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/" + pressure + "_pressure_top");
                 String type = machine.type().id();
-                var idle = machineModel(id, side, top,
-                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + type + "_front"));
-                var active = machineModel(id + "_active", side, top,
-                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + type + "_front_active"));
-                // Сторона вывода (OUTPUT) на модель не влияет, поэтому исключаем её из вариантов.
-                getVariantBuilder(machine.block().get()).forAllStatesExcept(state -> ConfiguredModel.builder()
-                        .modelFile(state.getValue(SteamMachineBlock.ACTIVE) ? active : idle)
-                        .rotationY(((int) state.getValue(SteamMachineBlock.FACING).toYRot() + 180) % 360)
-                        .build(), SteamMachineBlock.OUTPUT);
+                var frontIdle = ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + type + "_front");
+                var frontActive = ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + type + "_front_active");
+                var vent = ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/vent");
+                // Модели: {idle, active} x сторона вытяжки в системе координат модели (лицо на север).
+                var idle = machineModel(id, side, top, frontIdle, vent, null);
+                java.util.Map<String, BlockModelBuilder> variants = new java.util.HashMap<>();
+                for (Direction dir : Direction.values()) {
+                    if (dir == Direction.NORTH) {
+                        continue;
+                    }
+                    variants.put("idle_" + dir.getName(), machineModel(id + "_vent_" + dir.getName(), side, top, frontIdle, vent, dir));
+                    variants.put("active_" + dir.getName(), machineModel(id + "_active_vent_" + dir.getName(), side, top, frontActive, vent, dir));
+                }
+                getVariantBuilder(machine.block().get()).forAllStates(state -> {
+                    int rotation = ((int) state.getValue(SteamMachineBlock.FACING).toYRot() + 180) % 360;
+                    // Сторона вытяжки в координатах модели: поворачиваем против часовой на угол блока.
+                    Direction ventDir = state.getValue(SteamMachineBlock.OUTPUT);
+                    for (int i = 0; i < rotation / 90; i++) {
+                        ventDir = ventDir.getAxis().isHorizontal() ? ventDir.getCounterClockWise() : ventDir;
+                    }
+                    String key = (state.getValue(SteamMachineBlock.ACTIVE) ? "active_" : "idle_") + ventDir.getName();
+                    return ConfiguredModel.builder().modelFile(variants.get(key)).rotationY(rotation).build();
+                });
                 simpleBlockItem(machine.block().get(), idle);
             });
         }
@@ -406,12 +429,13 @@ public final class DataGenerators {
             add("message.projectgt.boiler.status", "Heat: %s%% | Steam: %s mB | Water: %s mB");
             add("gui.projectgt.machine.steam", "Steam: %s / %s mB");
             add("message.projectgt.machine.rotated", "Machine rotated: facing %s");
-            add("message.projectgt.machine.output_side", "Output side: %s");
+            add("message.projectgt.machine.output_side", "Vent side: %s");
             add("message.projectgt.machine.face_horizontal", "The front can only face horizontally");
-            add("message.projectgt.machine.output_not_front", "The front cannot be the output side");
+            add("message.projectgt.machine.output_not_front", "The front cannot be the vent side");
             add("jade.projectgt.recipe", "Recipe:");
             add("jade.projectgt.progress", "%s%% (%s / %s s)");
             add("jade.projectgt.parallels", "Parallels: %s");
+            add("jade.projectgt.vent_blocked", "Vent blocked");
             add("jade.projectgt.no_power", "Not enough input: Energy");
             add("config.jade.plugin_projectgt.steam_machine", "Steam Machine");
             add("jei.projectgt.eut", "%s EU/t (%s)");

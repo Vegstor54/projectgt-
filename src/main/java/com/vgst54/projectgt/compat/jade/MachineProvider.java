@@ -38,6 +38,7 @@ enum MachineProvider implements IBlockComponentProvider, IServerDataProvider<Blo
         if (!(accessor.getBlockEntity() instanceof SteamMachineBlockEntity machine)) {
             return;
         }
+        data.putBoolean("VentBlocked", machine.needsVenting() && machine.isVentBlocked());
         RecipeProcessor processor = machine.processor();
         ResourceLocation id = processor.recipeId();
         if (id == null) {
@@ -53,6 +54,9 @@ enum MachineProvider implements IBlockComponentProvider, IServerDataProvider<Blo
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
         CompoundTag data = accessor.getServerData();
+        if (data.getBoolean("VentBlocked")) {
+            tooltip.add(Component.translatable("jade.projectgt.vent_blocked").withStyle(ChatFormatting.RED));
+        }
         if (!data.contains("Recipe")) {
             return;
         }

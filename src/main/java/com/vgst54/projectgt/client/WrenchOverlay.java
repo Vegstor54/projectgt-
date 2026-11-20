@@ -69,7 +69,7 @@ public final class WrenchOverlay {
         int flowMask = 0;
         int crossMask = 0;
         if (machine) {
-            // У машины стрелка всегда показывает сторону вывода.
+            // У машины стрелка всегда показывает сторону вытяжки.
             arrowMode = true;
             flowMask = 1 << state.getValue(SteamMachineBlock.OUTPUT).ordinal();
             crossMask = 1 << state.getValue(SteamMachineBlock.FACING).ordinal();
