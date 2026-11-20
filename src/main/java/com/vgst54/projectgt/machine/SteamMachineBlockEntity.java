@@ -18,7 +18,15 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.Block;
@@ -56,6 +64,8 @@ public class SteamMachineBlockEntity extends BlockEntity implements MenuProvider
         }
     };
     private final RecipeProcessor processor;
+    /** После рецепта пар ещё не выпущен. */
+    private boolean needsVenting;
     private final IFluidHandler fluidHandler = new SteamInput();
     private final IItemHandler itemHandler = new SidedItems();
     /** Для меню: 0 прогресс, 1 длительность, 2 пар в баке. Передаётся клиенту как short, значения у нас меньше 32767. */
@@ -93,6 +103,8 @@ public class SteamMachineBlockEntity extends BlockEntity implements MenuProvider
             }
         };
         this.processor = new RecipeProcessor(machine, RecipeScaling.steam(pressure), input, output, new SteamSource(steam));
+        // Вытяжка: после каждого рецепта нужно выпустить пар; пока она перекрыта, новый рецепт не стартует.
+        processor.setHooks(() -> !needsVenting, () -> needsVenting = true);
     }
 
     /** Движок рецептов (для чтения состояния: прогресс, рецепт, параллели). */
@@ -127,6 +139,9 @@ public class SteamMachineBlockEntity extends BlockEntity implements MenuProvider
         if (processor.tick(level)) {
             setChanged();
         }
+        if (needsVenting && !isVentBlocked()) {
+            performVent();
+        }
         BlockState state = getBlockState();
         boolean working = processor.isWorking();
         if (state.getValue(SteamMachineBlock.ACTIVE) != working) {
@@ -138,6 +153,47 @@ public class SteamMachineBlockEntity extends BlockEntity implements MenuProvider
     public void dropContents(Level level, BlockPos pos) {
         Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), input.getStackInSlot(0));
         Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), output.getStackInSlot(0));
+    }
+
+    // --- Вытяжка (Exhaust Vent) ---
+
+    /** Перекрыта ли клетка перед вытяжкой: полный блок или блок, закрывающий нашу грань. */
+    public boolean isVentBlocked() {
+        if (level == null) {
+            return false;
+        }
+        Direction dir = getBlockState().getValue(SteamMachineBlock.OUTPUT);
+        BlockPos ventPos = worldPosition.relative(dir);
+        BlockState state = level.getBlockState(ventPos);
+        return state.canOcclude() || Shapes.blockOccudes(
+                state.getCollisionShape(level, ventPos), Shapes.block(), dir.getOpposite());
+    }
+
+    /** Нужно ли выпустить пар (для индикации). */
+    public boolean needsVenting() {
+        return needsVenting;
+    }
+
+    /** Выпускает пар: частицы, звук, урон существам в клетке вытяжки (6 у низкого давления, 12 у высокого). */
+    private void performVent() {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        Direction dir = getBlockState().getValue(SteamMachineBlock.OUTPUT);
+        BlockPos ventPos = worldPosition.relative(dir);
+        float damage = pressure == SteamPressure.HIGH ? 12f : 6f;
+        for (LivingEntity entity : serverLevel.getEntitiesOfClass(LivingEntity.class, new AABB(ventPos),
+                e -> !(e instanceof Player p) || !p.isSpectator() && !p.isCreative())) {
+            entity.hurt(serverLevel.damageSources().inFire(), damage);
+        }
+        double x = worldPosition.getX() + 0.5 + dir.getStepX() * 0.6;
+        double y = worldPosition.getY() + 0.5 + dir.getStepY() * 0.6;
+        double z = worldPosition.getZ() + 0.5 + dir.getStepZ() * 0.6;
+        serverLevel.sendParticles(ParticleTypes.CLOUD, x, y, z, 7 + serverLevel.random.nextInt(3),
+                dir.getStepX() / 2.0, dir.getStepY() / 2.0, dir.getStepZ() / 2.0, 0.1);
+        serverLevel.playSound(null, x, y, z, SoundEvents.LAVA_EXTINGUISH, SoundSource.BLOCKS, 1f, 1f);
+        needsVenting = false;
+        setChanged();
     }
 
     // --- Меню ---
@@ -163,6 +219,7 @@ public class SteamMachineBlockEntity extends BlockEntity implements MenuProvider
         tag.put("Input", input.serializeNBT(registries));
         tag.put("Output", output.serializeNBT(registries));
         processor.save(tag);
+        tag.putBoolean("NeedsVenting", needsVenting);
     }
 
     @Override
@@ -172,6 +229,7 @@ public class SteamMachineBlockEntity extends BlockEntity implements MenuProvider
         input.deserializeNBT(registries, tag.getCompound("Input"));
         output.deserializeNBT(registries, tag.getCompound("Output"));
         processor.load(tag);
+        needsVenting = tag.getBoolean("NeedsVenting");
     }
 
     /** Снаружи пар только заливается (из труб и котла), забрать его нельзя. */
