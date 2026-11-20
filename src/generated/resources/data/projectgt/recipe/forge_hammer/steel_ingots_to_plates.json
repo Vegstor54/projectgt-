@@ -1,0 +1,19 @@
+{
+  "type": "projectgt:forge_hammer",
+  "duration": 56,
+  "eut": 16,
+  "inputs": [
+    {
+      "count": 3,
+      "ingredient": {
+        "tag": "c:ingots/steel"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "count": 2,
+      "id": "projectgt:steel_plate"
+    }
+  ]
+}

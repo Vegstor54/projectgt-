@@ -1,0 +1,19 @@
+{
+  "type": "projectgt:macerator",
+  "duration": 59,
+  "eut": 2,
+  "inputs": [
+    {
+      "count": 1,
+      "ingredient": {
+        "tag": "c:ingots/nickel"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "count": 1,
+      "id": "projectgt:nickel_dust"
+    }
+  ]
+}

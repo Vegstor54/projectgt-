@@ -1,0 +1,19 @@
+{
+  "type": "projectgt:compressor",
+  "duration": 300,
+  "eut": 2,
+  "inputs": [
+    {
+      "count": 9,
+      "ingredient": {
+        "item": "minecraft:copper_ingot"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "count": 1,
+      "id": "minecraft:copper_block"
+    }
+  ]
+}

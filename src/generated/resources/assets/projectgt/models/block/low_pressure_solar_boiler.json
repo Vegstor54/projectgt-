@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "projectgt:block/boiler/low_pressure_solar_boiler"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "projectgt:macerator",
+  "duration": 64,
+  "eut": 2,
+  "inputs": [
+    {
+      "count": 1,
+      "ingredient": {
+        "tag": "c:ingots/copper"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "count": 1,
+      "id": "projectgt:copper_dust"
+    }
+  ]
+}

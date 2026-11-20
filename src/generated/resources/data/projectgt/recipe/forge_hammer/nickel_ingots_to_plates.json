@@ -1,0 +1,19 @@
+{
+  "type": "projectgt:forge_hammer",
+  "duration": 59,
+  "eut": 16,
+  "inputs": [
+    {
+      "count": 3,
+      "ingredient": {
+        "tag": "c:ingots/nickel"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "count": 2,
+      "id": "projectgt:nickel_plate"
+    }
+  ]
+}

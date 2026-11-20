@@ -1,0 +1,19 @@
+{
+  "type": "projectgt:forge_hammer",
+  "duration": 77,
+  "eut": 16,
+  "inputs": [
+    {
+      "count": 3,
+      "ingredient": {
+        "tag": "c:ingots/bronze"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "count": 2,
+      "id": "projectgt:bronze_plate"
+    }
+  ]
+}

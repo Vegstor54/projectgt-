@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "projectgt:block/low_pressure_solar_boiler"
+    }
+  }
+}

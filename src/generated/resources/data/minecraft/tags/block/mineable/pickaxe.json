@@ -310,6 +310,20 @@
     "projectgt:tin_huge_item_pipe",
     "projectgt:nickel_normal_item_pipe",
     "projectgt:nickel_large_item_pipe",
-    "projectgt:nickel_huge_item_pipe"
+    "projectgt:nickel_huge_item_pipe",
+    "projectgt:low_pressure_coal_boiler",
+    "projectgt:low_pressure_solar_boiler",
+    "projectgt:low_pressure_liquid_boiler",
+    "projectgt:high_pressure_coal_boiler",
+    "projectgt:high_pressure_solar_boiler",
+    "projectgt:high_pressure_liquid_boiler",
+    "projectgt:low_pressure_steam_macerator",
+    "projectgt:low_pressure_steam_extractor",
+    "projectgt:low_pressure_steam_compressor",
+    "projectgt:low_pressure_steam_forge_hammer",
+    "projectgt:high_pressure_steam_macerator",
+    "projectgt:high_pressure_steam_extractor",
+    "projectgt:high_pressure_steam_compressor",
+    "projectgt:high_pressure_steam_forge_hammer"
   ]
 }

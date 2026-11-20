@@ -1,0 +1,19 @@
+{
+  "type": "projectgt:forge_hammer",
+  "duration": 197,
+  "eut": 16,
+  "inputs": [
+    {
+      "count": 3,
+      "ingredient": {
+        "tag": "c:ingots/gold"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "count": 2,
+      "id": "projectgt:gold_plate"
+    }
+  ]
+}

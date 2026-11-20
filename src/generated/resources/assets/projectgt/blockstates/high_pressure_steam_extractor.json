@@ -1,0 +1,184 @@
+{
+  "variants": {
+    "facing=east,lit=false,output=down": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_down",
+      "y": 90
+    },
+    "facing=east,lit=false,output=east": {
+      "model": "projectgt:block/high_pressure_steam_extractor",
+      "y": 90
+    },
+    "facing=east,lit=false,output=north": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_west",
+      "y": 90
+    },
+    "facing=east,lit=false,output=south": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_east",
+      "y": 90
+    },
+    "facing=east,lit=false,output=up": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_up",
+      "y": 90
+    },
+    "facing=east,lit=false,output=west": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_south",
+      "y": 90
+    },
+    "facing=east,lit=true,output=down": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_down",
+      "y": 90
+    },
+    "facing=east,lit=true,output=east": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active",
+      "y": 90
+    },
+    "facing=east,lit=true,output=north": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_west",
+      "y": 90
+    },
+    "facing=east,lit=true,output=south": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_east",
+      "y": 90
+    },
+    "facing=east,lit=true,output=up": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_up",
+      "y": 90
+    },
+    "facing=east,lit=true,output=west": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_south",
+      "y": 90
+    },
+    "facing=north,lit=false,output=down": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_down"
+    },
+    "facing=north,lit=false,output=east": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_east"
+    },
+    "facing=north,lit=false,output=north": {
+      "model": "projectgt:block/high_pressure_steam_extractor"
+    },
+    "facing=north,lit=false,output=south": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_south"
+    },
+    "facing=north,lit=false,output=up": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_up"
+    },
+    "facing=north,lit=false,output=west": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_west"
+    },
+    "facing=north,lit=true,output=down": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_down"
+    },
+    "facing=north,lit=true,output=east": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_east"
+    },
+    "facing=north,lit=true,output=north": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active"
+    },
+    "facing=north,lit=true,output=south": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_south"
+    },
+    "facing=north,lit=true,output=up": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_up"
+    },
+    "facing=north,lit=true,output=west": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_west"
+    },
+    "facing=south,lit=false,output=down": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_down",
+      "y": 180
+    },
+    "facing=south,lit=false,output=east": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_west",
+      "y": 180
+    },
+    "facing=south,lit=false,output=north": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_south",
+      "y": 180
+    },
+    "facing=south,lit=false,output=south": {
+      "model": "projectgt:block/high_pressure_steam_extractor",
+      "y": 180
+    },
+    "facing=south,lit=false,output=up": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_up",
+      "y": 180
+    },
+    "facing=south,lit=false,output=west": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_east",
+      "y": 180
+    },
+    "facing=south,lit=true,output=down": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_down",
+      "y": 180
+    },
+    "facing=south,lit=true,output=east": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_west",
+      "y": 180
+    },
+    "facing=south,lit=true,output=north": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_south",
+      "y": 180
+    },
+    "facing=south,lit=true,output=south": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active",
+      "y": 180
+    },
+    "facing=south,lit=true,output=up": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_up",
+      "y": 180
+    },
+    "facing=south,lit=true,output=west": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_east",
+      "y": 180
+    },
+    "facing=west,lit=false,output=down": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_down",
+      "y": 270
+    },
+    "facing=west,lit=false,output=east": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_south",
+      "y": 270
+    },
+    "facing=west,lit=false,output=north": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_east",
+      "y": 270
+    },
+    "facing=west,lit=false,output=south": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_west",
+      "y": 270
+    },
+    "facing=west,lit=false,output=up": {
+      "model": "projectgt:block/high_pressure_steam_extractor_vent_up",
+      "y": 270
+    },
+    "facing=west,lit=false,output=west": {
+      "model": "projectgt:block/high_pressure_steam_extractor",
+      "y": 270
+    },
+    "facing=west,lit=true,output=down": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_down",
+      "y": 270
+    },
+    "facing=west,lit=true,output=east": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_south",
+      "y": 270
+    },
+    "facing=west,lit=true,output=north": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_east",
+      "y": 270
+    },
+    "facing=west,lit=true,output=south": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_west",
+      "y": 270
+    },
+    "facing=west,lit=true,output=up": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active_vent_up",
+      "y": 270
+    },
+    "facing=west,lit=true,output=west": {
+      "model": "projectgt:block/high_pressure_steam_extractor_active",
+      "y": 270
+    }
+  }
+}

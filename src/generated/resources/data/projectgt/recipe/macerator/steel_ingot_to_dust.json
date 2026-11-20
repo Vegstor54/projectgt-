@@ -1,0 +1,19 @@
+{
+  "type": "projectgt:macerator",
+  "duration": 56,
+  "eut": 2,
+  "inputs": [
+    {
+      "count": 1,
+      "ingredient": {
+        "tag": "c:ingots/steel"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "count": 1,
+      "id": "projectgt:steel_dust"
+    }
+  ]
+}
