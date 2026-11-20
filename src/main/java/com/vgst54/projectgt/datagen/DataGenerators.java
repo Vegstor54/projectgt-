@@ -407,6 +407,7 @@ public final class DataGenerators {
             add("gui.projectgt.machine.steam", "Steam: %s / %s mB");
             add("message.projectgt.machine.rotated", "Machine rotated: facing %s");
             add("message.projectgt.machine.output_side", "Output side: %s");
+            add("message.projectgt.machine.face_horizontal", "The front can only face horizontally");
             add("message.projectgt.machine.output_not_front", "The front cannot be the output side");
             add("jade.projectgt.recipe", "Recipe:");
             add("jade.projectgt.progress", "%s%% (%s / %s s)");

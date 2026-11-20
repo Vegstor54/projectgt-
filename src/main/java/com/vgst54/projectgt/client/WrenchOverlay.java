@@ -67,10 +67,12 @@ public final class WrenchOverlay {
 
         boolean arrowMode = mc.player.isShiftKeyDown();
         int flowMask = 0;
+        int crossMask = 0;
         if (machine) {
             // У машины стрелка всегда показывает сторону вывода.
             arrowMode = true;
             flowMask = 1 << state.getValue(SteamMachineBlock.OUTPUT).ordinal();
+            crossMask = 1 << state.getValue(SteamMachineBlock.FACING).ordinal();
         } else if (mc.level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipeEntity) {
             flowMask = pipeEntity.flowMask();
         } else if (mc.level.getBlockEntity(pos) instanceof ItemPipeBlockEntity pipeEntity) {
@@ -93,15 +95,15 @@ public final class WrenchOverlay {
         // Сначала приглушённые грани, потом яркая поверх.
         for (Direction face : Direction.values()) {
             if (face != hitFace) {
-                drawFace(lines, pose, state, face, DIM, arrowMode, flowMask, false, 0, 0);
+                drawFace(lines, pose, state, face, DIM, arrowMode, flowMask, crossMask, false, 0, 0);
             }
         }
-        drawFace(lines, pose, state, hitFace, ACTIVE, arrowMode, flowMask, true, hoverU, hoverV);
+        drawFace(lines, pose, state, hitFace, ACTIVE, arrowMode, flowMask, crossMask, true, hoverU, hoverV);
         poseStack.popPose();
     }
 
     private static void drawFace(VertexConsumer lines, PoseStack.Pose pose, BlockState state, Direction face,
-                                 Style style, boolean arrowMode, int flowMask, boolean hover, int hoverU, int hoverV) {
+                                 Style style, boolean arrowMode, int flowMask, int crossMask, boolean hover, int hoverU, int hoverV) {
         // Сетка: рамка грани и линии по границам центральной клетки.
         rect(lines, pose, face, 0, 0, 1, 1, style.grid());
         for (int i = 1; i <= 2; i++) {
@@ -117,6 +119,11 @@ public final class WrenchOverlay {
                 double v1 = EDGES[j + 1];
                 Direction dir = PipeWrenchGrid.directionOf(face, i - 1, j - 1);
 
+                // Крестик по маске (у машины: куда смотрит лицо).
+                if ((crossMask & (1 << dir.ordinal())) != 0) {
+                    line(lines, pose, face, u0 + MARGIN, v0 + MARGIN, u1 - MARGIN, v1 - MARGIN, style.cross());
+                    line(lines, pose, face, u0 + MARGIN, v1 - MARGIN, u1 - MARGIN, v0 + MARGIN, style.cross());
+                }
                 if (arrowMode) {
                     if ((flowMask & (1 << dir.ordinal())) != 0) {
                         arrow(lines, pose, face, dir, u0, v0, u1, v1, style.arrow());
