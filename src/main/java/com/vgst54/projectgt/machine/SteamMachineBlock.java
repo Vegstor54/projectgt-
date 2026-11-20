@@ -38,7 +38,7 @@ import net.minecraft.world.phys.BlockHitResult;
  */
 public class SteamMachineBlock extends Block implements EntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-    /** Сторона вывода предметов (и вытяжки пара): по умолчанию сзади, меняется ключом. */
+    /** Сторона вытяжки пара (как выходная сторона в GT): по умолчанию сзади, меняется ключом. Автовывода предметов у паровых нет. */
     public static final DirectionProperty OUTPUT = DirectionProperty.create("output", net.minecraft.core.Direction.values());
     /** Машина работает: лицо рисуется анимированным (оверлей _active). */
     public static final BooleanProperty ACTIVE = BlockStateProperties.LIT;
@@ -75,7 +75,7 @@ public class SteamMachineBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Ключ: ПКМ по клетке сетки задаёт сторону вывода (не лицо), ПКМ с sneak по клетке задаёт лицо (по горизонтали).
+     * Ключ: ПКМ по клетке сетки задаёт сторону вытяжки (не лицо), ПКМ с sneak по клетке задаёт лицо (по горизонтали).
      * Сторона под курсором определяется так же, как на трубах (PipeWrenchGrid).
      */
     @Override
@@ -89,7 +89,7 @@ public class SteamMachineBlock extends Block implements EntityBlock {
         }
         if (player.isShiftKeyDown()) {
             // Shift: клетка сетки задаёт, куда смотрит лицо (только по горизонтали). Если там сторона вывода,
-            // вывод уходит на прежнюю сторону лица, чтобы лицо и вывод не совпали.
+            // вытяжка уходит на прежнюю сторону лица, чтобы лицо и вытяжка не совпали.
             Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
             Direction facing = PipeWrenchGrid.directionAt(hit.getDirection(), local.x, local.y, local.z);
             if (!facing.getAxis().isHorizontal()) {

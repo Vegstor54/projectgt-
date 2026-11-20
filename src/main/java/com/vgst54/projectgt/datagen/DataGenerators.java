@@ -406,9 +406,9 @@ public final class DataGenerators {
             add("message.projectgt.boiler.status", "Heat: %s%% | Steam: %s mB | Water: %s mB");
             add("gui.projectgt.machine.steam", "Steam: %s / %s mB");
             add("message.projectgt.machine.rotated", "Machine rotated: facing %s");
-            add("message.projectgt.machine.output_side", "Output side: %s");
+            add("message.projectgt.machine.output_side", "Vent side: %s");
             add("message.projectgt.machine.face_horizontal", "The front can only face horizontally");
-            add("message.projectgt.machine.output_not_front", "The front cannot be the output side");
+            add("message.projectgt.machine.output_not_front", "The front cannot be the vent side");
             add("jade.projectgt.recipe", "Recipe:");
             add("jade.projectgt.progress", "%s%% (%s / %s s)");
             add("jade.projectgt.parallels", "Parallels: %s");
