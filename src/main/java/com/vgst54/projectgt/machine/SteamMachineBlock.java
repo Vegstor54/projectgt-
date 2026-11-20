@@ -75,7 +75,7 @@ public class SteamMachineBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Ключ: ПКМ по клетке сетки задаёт сторону вывода (не лицо), ПКМ с sneak поворачивает машину по горизонтали.
+     * Ключ: ПКМ по клетке сетки задаёт сторону вывода (не лицо), ПКМ с sneak по клетке задаёт лицо (по горизонтали).
      * Сторона под курсором определяется так же, как на трубах (PipeWrenchGrid).
      */
     @Override
@@ -88,10 +88,17 @@ public class SteamMachineBlock extends Block implements EntityBlock {
             return ItemInteractionResult.sidedSuccess(true);
         }
         if (player.isShiftKeyDown()) {
-            Direction facing = state.getValue(FACING).getClockWise();
+            // Shift: клетка сетки задаёт, куда смотрит лицо (только по горизонтали). Если там сторона вывода,
+            // вывод уходит на прежнюю сторону лица, чтобы лицо и вывод не совпали.
+            Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
+            Direction facing = PipeWrenchGrid.directionAt(hit.getDirection(), local.x, local.y, local.z);
+            if (!facing.getAxis().isHorizontal()) {
+                player.displayClientMessage(Component.translatable("message.projectgt.machine.face_horizontal"), true);
+                return ItemInteractionResult.SUCCESS;
+            }
             Direction output = state.getValue(OUTPUT);
-            if (output.getAxis().isHorizontal()) {
-                output = output.getClockWise();
+            if (output == facing) {
+                output = state.getValue(FACING);
             }
             level.setBlock(pos, state.setValue(FACING, facing).setValue(OUTPUT, output), Block.UPDATE_ALL);
             player.displayClientMessage(Component.translatable("message.projectgt.machine.rotated", facing.getName()), true);
