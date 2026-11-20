@@ -195,6 +195,9 @@ public final class DataGenerators {
                 // Модели: {idle, active} x сторона вытяжки в системе координат модели (лицо на север).
                 var idle = machineModel(id, side, top, frontIdle, vent, null);
                 java.util.Map<String, BlockModelBuilder> variants = new java.util.HashMap<>();
+                // Вытяжка на лице невозможна (ключ не даёт), но такие состояния всё равно существуют: рисуем без решётки.
+                variants.put("idle_north", idle);
+                variants.put("active_north", machineModel(id + "_active", side, top, frontActive, vent, null));
                 for (Direction dir : Direction.values()) {
                     if (dir == Direction.NORTH) {
                         continue;
