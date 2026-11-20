@@ -3,6 +3,7 @@ package com.vgst54.projectgt.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.vgst54.projectgt.item.WrenchItem;
+import com.vgst54.projectgt.machine.SteamMachineBlock;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.FluidPipeBlockEntity;
 import com.vgst54.projectgt.pipe.ItemPipeBlock;
@@ -59,13 +60,18 @@ public final class WrenchOverlay {
         BlockPos pos = hit.getBlockPos();
         BlockState state = mc.level.getBlockState(pos);
         boolean fluidPipe = state.getBlock() instanceof FluidPipeBlock;
-        if (!fluidPipe && !(state.getBlock() instanceof ItemPipeBlock)) {
+        boolean machine = state.getBlock() instanceof SteamMachineBlock;
+        if (!fluidPipe && !machine && !(state.getBlock() instanceof ItemPipeBlock)) {
             return;
         }
 
         boolean arrowMode = mc.player.isShiftKeyDown();
         int flowMask = 0;
-        if (mc.level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipeEntity) {
+        if (machine) {
+            // У машины стрелка всегда показывает сторону вывода.
+            arrowMode = true;
+            flowMask = 1 << state.getValue(SteamMachineBlock.OUTPUT).ordinal();
+        } else if (mc.level.getBlockEntity(pos) instanceof FluidPipeBlockEntity pipeEntity) {
             flowMask = pipeEntity.flowMask();
         } else if (mc.level.getBlockEntity(pos) instanceof ItemPipeBlockEntity pipeEntity) {
             flowMask = pipeEntity.restrictiveMask();

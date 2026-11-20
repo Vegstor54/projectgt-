@@ -56,6 +56,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.model.generators.BlockModelBuilder;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
+import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
 import net.neoforged.neoforge.client.model.generators.ModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
@@ -183,8 +184,11 @@ public final class DataGenerators {
                         ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + type + "_front"));
                 var active = machineModel(id + "_active", side, top,
                         ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + type + "_front_active"));
-                horizontalBlock(machine.block().get(),
-                        state -> state.getValue(SteamMachineBlock.ACTIVE) ? active : idle);
+                // Сторона вывода (OUTPUT) на модель не влияет, поэтому исключаем её из вариантов.
+                getVariantBuilder(machine.block().get()).forAllStatesExcept(state -> ConfiguredModel.builder()
+                        .modelFile(state.getValue(SteamMachineBlock.ACTIVE) ? active : idle)
+                        .rotationY(((int) state.getValue(SteamMachineBlock.FACING).toYRot() + 180) % 360)
+                        .build(), SteamMachineBlock.OUTPUT);
                 simpleBlockItem(machine.block().get(), idle);
             });
         }
@@ -401,6 +405,9 @@ public final class DataGenerators {
             add("tooltip.projectgt.boiler.warmup", "Warm-up: %s s");
             add("message.projectgt.boiler.status", "Heat: %s%% | Steam: %s mB | Water: %s mB");
             add("gui.projectgt.machine.steam", "Steam: %s / %s mB");
+            add("message.projectgt.machine.rotated", "Machine rotated: facing %s");
+            add("message.projectgt.machine.output_side", "Output side: %s");
+            add("message.projectgt.machine.output_not_front", "The front cannot be the output side");
             add("jade.projectgt.recipe", "Recipe:");
             add("jade.projectgt.progress", "%s%% (%s / %s s)");
             add("jade.projectgt.parallels", "Parallels: %s");
