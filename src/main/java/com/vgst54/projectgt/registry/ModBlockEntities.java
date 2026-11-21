@@ -3,6 +3,7 @@ package com.vgst54.projectgt.registry;
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.boiler.SteamBoilerBlockEntity;
 import com.vgst54.projectgt.machine.SteamMachineBlockEntity;
+import com.vgst54.projectgt.multiblock.MultiblockControllerBlockEntity;
 import com.vgst54.projectgt.pipe.FluidPipeBlockEntity;
 import com.vgst54.projectgt.pipe.ItemPipeBlockEntity;
 
@@ -42,6 +43,13 @@ public final class ModBlockEntities {
             TYPES.register("steam_machine", () -> BlockEntityType.Builder.of(
                     SteamMachineBlockEntity::new,
                     ModBlocks.steamMachines().map(machine -> (Block) machine.block().get()).toArray(Block[]::new)
+            ).build(null));
+
+    /** Блок-сущность контроллеров мультиблоков. */
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MultiblockControllerBlockEntity>> MULTIBLOCK_CONTROLLER =
+            TYPES.register("multiblock_controller", () -> BlockEntityType.Builder.of(
+                    MultiblockControllerBlockEntity::new,
+                    ModBlocks.STEAM_GRINDER.get()
             ).build(null));
 
     private ModBlockEntities() {}

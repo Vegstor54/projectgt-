@@ -84,6 +84,8 @@ public final class ModCreativeTabs {
                     .displayItems((params, output) -> {
                         ModBlocks.boilers().forEach(boiler -> output.accept(boiler.item().get()));
                         ModBlocks.steamMachines().forEach(machine -> output.accept(machine.item().get()));
+                        output.accept(ModBlocks.BRONZE_BRICKS_CASING_ITEM.get());
+                        output.accept(ModBlocks.STEAM_GRINDER_ITEM.get());
                     })
                     .build());
 
