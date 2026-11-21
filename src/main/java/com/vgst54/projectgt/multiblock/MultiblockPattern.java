@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.vgst54.projectgt.multiblock.part.MultiblockPartBlock;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -23,7 +25,7 @@ public final class MultiblockPattern {
     public static final char CONTROLLER = '@';
 
     /** Итог проверки: собрана ли структура, сообщение и количество блоков по ключам. */
-    public record Result(boolean formed, Component message, Map<String, Integer> counts) {}
+    public record Result(boolean formed, Component message, Map<String, Integer> counts, List<BlockPos> parts) {}
 
     private final List<String[]> aisles;
     private final Map<Character, Matcher> where;
@@ -101,6 +103,7 @@ public final class MultiblockPattern {
     /** Проверяет структуру вокруг контроллера. */
     public Result check(Level level, BlockPos controllerPos, Direction facing) {
         Map<String, Integer> counts = new HashMap<>();
+        List<BlockPos> parts = new ArrayList<>();
         for (int a = 0; a < aisles.size(); a++) {
             String[] rows = aisles.get(a);
             for (int r = 0; r < rows.length; r++) {
@@ -115,10 +118,13 @@ public final class MultiblockPattern {
                     Matcher.Rule rule = where.get(symbol).match(state);
                     if (rule == null) {
                         return new Result(false, Component.translatable("message.projectgt.multiblock.wrong_block",
-                                state.getBlock().getName(), pos.getX(), pos.getY(), pos.getZ()), counts);
+                                state.getBlock().getName(), pos.getX(), pos.getY(), pos.getZ()), counts, List.of());
                     }
                     if (!rule.key().isEmpty()) {
                         counts.merge(rule.key(), 1, Integer::sum);
+                    }
+                    if (state.getBlock() instanceof MultiblockPartBlock) {
+                        parts.add(pos);
                     }
                 }
             }
@@ -128,10 +134,10 @@ public final class MultiblockPattern {
             int[] limit = entry.getValue();
             if (count < limit[0] || count > limit[1]) {
                 return new Result(false, Component.translatable("message.projectgt.multiblock.wrong_count",
-                        entry.getKey(), count, limit[0], limit[1]), counts);
+                        entry.getKey(), count, limit[0], limit[1]), counts, List.of());
             }
         }
-        return new Result(true, Component.translatable("message.projectgt.multiblock.formed"), counts);
+        return new Result(true, Component.translatable("message.projectgt.multiblock.formed"), counts, List.copyOf(parts));
     }
 
     public static final class Builder {

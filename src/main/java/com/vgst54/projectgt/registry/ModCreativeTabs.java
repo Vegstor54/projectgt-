@@ -86,6 +86,9 @@ public final class ModCreativeTabs {
                         ModBlocks.steamMachines().forEach(machine -> output.accept(machine.item().get()));
                         output.accept(ModBlocks.BRONZE_BRICKS_CASING_ITEM.get());
                         output.accept(ModBlocks.STEAM_GRINDER_ITEM.get());
+                        output.accept(ModBlocks.STEAM_INPUT_BUS_ITEM.get());
+                        output.accept(ModBlocks.STEAM_OUTPUT_BUS_ITEM.get());
+                        output.accept(ModBlocks.STEAM_HATCH_ITEM.get());
                     })
                     .build());
 

@@ -1,5 +1,7 @@
 package com.vgst54.projectgt.multiblock;
 
+import java.util.List;
+
 import com.vgst54.projectgt.registry.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
@@ -15,6 +17,9 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
     /** Раз во сколько тиков перепроверять структуру (20 = раз в секунду). */
     private static final int CHECK_INTERVAL = 20;
 
+    /** Люки собранной структуры (пусто, пока структура не собрана). */
+    private List<BlockPos> parts = List.of();
+
     public MultiblockControllerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MULTIBLOCK_CONTROLLER.get(), pos, state);
     }
@@ -27,11 +32,17 @@ public class MultiblockControllerBlockEntity extends BlockEntity {
     public MultiblockPattern.Result recheck() {
         MultiblockPattern.Result result = controllerBlock().pattern()
                 .check(level, worldPosition, getBlockState().getValue(MultiblockControllerBlock.FACING));
+        parts = result.parts();
         BlockState state = getBlockState();
         if (state.getValue(MultiblockControllerBlock.FORMED) != result.formed()) {
             level.setBlock(worldPosition, state.setValue(MultiblockControllerBlock.FORMED, result.formed()), Block.UPDATE_ALL);
         }
         return result;
+    }
+
+    /** Позиции люков собранной структуры. */
+    public List<BlockPos> parts() {
+        return parts;
     }
 
     public void serverTick() {

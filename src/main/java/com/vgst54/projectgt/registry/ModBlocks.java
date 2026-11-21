@@ -16,6 +16,8 @@ import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.Materials;
 import com.vgst54.projectgt.multiblock.MultiblockControllerBlock;
 import com.vgst54.projectgt.multiblock.Multiblocks;
+import com.vgst54.projectgt.multiblock.PartAbility;
+import com.vgst54.projectgt.multiblock.part.MultiblockPartBlock;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.FluidPipeMaterials;
 import com.vgst54.projectgt.pipe.FluidPipeType;
@@ -79,9 +81,29 @@ public final class ModBlocks {
     public static final DeferredItem<BlockItem> STEAM_GRINDER_ITEM =
             ModItems.ITEMS.registerSimpleBlockItem("steam_grinder", STEAM_GRINDER);
 
-    /** Блоки мультиблоков (корпуса и контроллеры) для лута, тегов и вкладки. */
+    /** Люки парового мультиблока. */
+    public static final DeferredBlock<MultiblockPartBlock> STEAM_INPUT_BUS = part("steam_input_bus", PartAbility.STEAM_IMPORT_ITEMS);
+    public static final DeferredBlock<MultiblockPartBlock> STEAM_OUTPUT_BUS = part("steam_output_bus", PartAbility.STEAM_EXPORT_ITEMS);
+    public static final DeferredBlock<MultiblockPartBlock> STEAM_HATCH = part("steam_input_hatch", PartAbility.STEAM);
+    public static final DeferredItem<BlockItem> STEAM_INPUT_BUS_ITEM = ModItems.ITEMS.registerSimpleBlockItem("steam_input_bus", STEAM_INPUT_BUS);
+    public static final DeferredItem<BlockItem> STEAM_OUTPUT_BUS_ITEM = ModItems.ITEMS.registerSimpleBlockItem("steam_output_bus", STEAM_OUTPUT_BUS);
+    public static final DeferredItem<BlockItem> STEAM_HATCH_ITEM = ModItems.ITEMS.registerSimpleBlockItem("steam_input_hatch", STEAM_HATCH);
+
+    private static DeferredBlock<MultiblockPartBlock> part(String id, PartAbility ability) {
+        return BLOCKS.register(id, () -> new MultiblockPartBlock(BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_ORANGE).strength(3.0f, 6.0f).sound(SoundType.METAL)
+                .requiresCorrectToolForDrops(), ability));
+    }
+
+    /** Люки мультиблоков (для BE-типа, лута, тегов). */
+    public static Stream<DeferredBlock<MultiblockPartBlock>> multiblockParts() {
+        return Stream.of(STEAM_INPUT_BUS, STEAM_OUTPUT_BUS, STEAM_HATCH);
+    }
+
+    /** Блоки мультиблоков (корпуса, контроллеры и люки) для лута, тегов и вкладки. */
     public static Stream<Block> multiblockBlocks() {
-        return Stream.of(BRONZE_BRICKS_CASING.get(), STEAM_GRINDER.get());
+        return Stream.concat(Stream.of(BRONZE_BRICKS_CASING.get(), STEAM_GRINDER.get()),
+                multiblockParts().map(DeferredBlock::get));
     }
 
     private static final List<SteamMachine> STEAM_MACHINES = new ArrayList<>();
