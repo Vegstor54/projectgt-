@@ -28,5 +28,10 @@ public final class ModCapabilities {
                 (machine, side) -> machine.fluidHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STEAM_MACHINE.get(),
                 (machine, side) -> machine.itemHandler());
+        // Люки мультиблока: шины отдают предметы (ввод только принимает, вывод только отдаёт), паровой люк принимает пар.
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MULTIBLOCK_PART.get(),
+                (part, side) -> part.outsideItems());
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.MULTIBLOCK_PART.get(),
+                (part, side) -> part.outsideFluid());
     }
 }

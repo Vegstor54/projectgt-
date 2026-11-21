@@ -237,6 +237,29 @@ public final class DataGenerators {
                     .rotationY(((int) state.getValue(MultiblockControllerBlock.FACING).toYRot() + 180) % 360)
                     .build());
             simpleBlockItem(ModBlocks.STEAM_GRINDER.get(), idle);
+
+            // Люки: корпус с оверлеем значка на всех гранях (снаружи структуры виден только внешний).
+            partModel(ModBlocks.STEAM_INPUT_BUS.get(), "steam_input_bus", casing, "hatch_item_in");
+            partModel(ModBlocks.STEAM_OUTPUT_BUS.get(), "steam_output_bus", casing, "hatch_item_out");
+            partModel(ModBlocks.STEAM_HATCH.get(), "steam_input_hatch", casing, "hatch_steam");
+        }
+
+        private void partModel(Block block, String name, ResourceLocation casing, String overlay) {
+            var model = models().getBuilder(name)
+                    .parent(new ModelFile.UncheckedModelFile("minecraft:block/block"))
+                    .renderType("minecraft:cutout")
+                    .texture("particle", casing)
+                    .texture("all", casing)
+                    .texture("overlay", ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + overlay));
+            for (float grow : new float[] {0f, 0.01f}) {
+                var element = model.element().from(-grow, -grow, -grow).to(16 + grow, 16 + grow, 16 + grow);
+                for (Direction dir : Direction.values()) {
+                    element.face(dir).texture(grow == 0f ? "#all" : "#overlay").cullface(dir).end();
+                }
+                element.end();
+            }
+            simpleBlock(block, model);
+            simpleBlockItem(block, model);
         }
 
         /** Котлы: куб с одной текстурой на вид (block/boiler/<id>). */
@@ -487,6 +510,9 @@ public final class DataGenerators {
             ModBlocks.steamMachines().forEach(machine -> addBlock(machine.block(), machine.displayName()));
             addBlock(ModBlocks.BRONZE_BRICKS_CASING, "Bronze Bricks Casing");
             addBlock(ModBlocks.STEAM_GRINDER, "Steam Grinder");
+            addBlock(ModBlocks.STEAM_INPUT_BUS, "Steam Input Bus");
+            addBlock(ModBlocks.STEAM_OUTPUT_BUS, "Steam Output Bus");
+            addBlock(ModBlocks.STEAM_HATCH, "Steam Input Hatch");
             add("message.projectgt.multiblock.formed", "Structure formed");
             add("message.projectgt.multiblock.wrong_block", "Structure incomplete: wrong block %s at %s %s %s");
             add("message.projectgt.multiblock.wrong_count", "Structure incomplete: %s is %s (needs %s to %s)");

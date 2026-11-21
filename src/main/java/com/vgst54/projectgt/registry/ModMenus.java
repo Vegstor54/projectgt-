@@ -3,6 +3,7 @@ package com.vgst54.projectgt.registry;
 import com.vgst54.projectgt.ProjectGT;
 import com.vgst54.projectgt.boiler.BoilerMenu;
 import com.vgst54.projectgt.machine.SteamMachineMenu;
+import com.vgst54.projectgt.multiblock.part.PartItemMenu;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -19,6 +20,9 @@ public final class ModMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<BoilerMenu>> BOILER =
             MENUS.register("boiler", () -> IMenuTypeExtension.create(BoilerMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<PartItemMenu>> PART_ITEMS =
+            MENUS.register("part_items", () -> IMenuTypeExtension.create(PartItemMenu::new));
 
     private ModMenus() {}
 }

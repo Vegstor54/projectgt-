@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
+import com.vgst54.projectgt.multiblock.part.MultiblockPartBlock;
+
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -42,6 +44,21 @@ public final class Matcher {
         return new Matcher(List.of(new Rule(key, state -> {
             for (Block block : blocks) {
                 if (state.is(block)) {
+                    return true;
+                }
+            }
+            return false;
+        }, min, max)));
+    }
+
+    /** Люк с одной из способностей, с пределами по общему количеству (по ключу). */
+    public static Matcher abilities(String key, int min, int max, PartAbility... abilities) {
+        return new Matcher(List.of(new Rule(key, state -> {
+            if (!(state.getBlock() instanceof MultiblockPartBlock part)) {
+                return false;
+            }
+            for (PartAbility ability : abilities) {
+                if (part.ability() == ability) {
                     return true;
                 }
             }
