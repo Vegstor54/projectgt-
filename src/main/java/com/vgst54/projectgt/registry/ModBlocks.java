@@ -14,6 +14,8 @@ import com.vgst54.projectgt.machine.SteamPressure;
 import com.vgst54.projectgt.machine.recipe.MachineType;
 import com.vgst54.projectgt.material.Material;
 import com.vgst54.projectgt.material.Materials;
+import com.vgst54.projectgt.multiblock.MultiblockControllerBlock;
+import com.vgst54.projectgt.multiblock.Multiblocks;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.FluidPipeMaterials;
 import com.vgst54.projectgt.pipe.FluidPipeType;
@@ -60,6 +62,26 @@ public final class ModBlocks {
         public String displayName() {
             return (pressure == SteamPressure.HIGH ? "High Pressure Steam " : "Low Pressure Steam ") + type.displayName();
         }
+    }
+
+    /** Корпус парового мультиблока (бронзовые кирпичи). */
+    public static final DeferredBlock<Block> BRONZE_BRICKS_CASING = BLOCKS.registerSimpleBlock("bronze_bricks_casing",
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE).strength(3.0f, 6.0f)
+                    .sound(SoundType.METAL).requiresCorrectToolForDrops());
+    public static final DeferredItem<BlockItem> BRONZE_BRICKS_CASING_ITEM =
+            ModItems.ITEMS.registerSimpleBlockItem("bronze_bricks_casing", BRONZE_BRICKS_CASING);
+
+    /** Контроллер парового измельчителя (форма в Multiblocks.steamGrinder). */
+    public static final DeferredBlock<MultiblockControllerBlock> STEAM_GRINDER = BLOCKS.register("steam_grinder",
+            () -> new MultiblockControllerBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE)
+                    .strength(3.0f, 6.0f).sound(SoundType.METAL).requiresCorrectToolForDrops(),
+                    Multiblocks::steamGrinder));
+    public static final DeferredItem<BlockItem> STEAM_GRINDER_ITEM =
+            ModItems.ITEMS.registerSimpleBlockItem("steam_grinder", STEAM_GRINDER);
+
+    /** Блоки мультиблоков (корпуса и контроллеры) для лута, тегов и вкладки. */
+    public static Stream<Block> multiblockBlocks() {
+        return Stream.of(BRONZE_BRICKS_CASING.get(), STEAM_GRINDER.get());
     }
 
     private static final List<SteamMachine> STEAM_MACHINES = new ArrayList<>();

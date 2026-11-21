@@ -21,6 +21,7 @@ import com.vgst54.projectgt.material.OreTags;
 import com.vgst54.projectgt.pipe.FluidPipeBlock;
 import com.vgst54.projectgt.pipe.ItemPipeBlock;
 import com.vgst54.projectgt.machine.SteamMachineBlock;
+import com.vgst54.projectgt.multiblock.MultiblockControllerBlock;
 import com.vgst54.projectgt.machine.SteamPressure;
 import com.vgst54.projectgt.machine.recipe.MachineRecipe;
 import com.vgst54.projectgt.machine.recipe.MachineType;
@@ -219,6 +220,23 @@ public final class DataGenerators {
                 });
                 simpleBlockItem(machine.block().get(), idle);
             });
+            registerMultiblocks();
+        }
+
+        /** Корпус мультиблока и контроллер: корпус с оверлеем лица, собранная структура показывает анимированное лицо. */
+        private void registerMultiblocks() {
+            var casing = ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/casing/bronze_bricks");
+            simpleBlockWithItem(ModBlocks.BRONZE_BRICKS_CASING.get(), models().cubeAll("bronze_bricks_casing", casing));
+
+            var idle = machineModel("steam_grinder", casing, casing,
+                    ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/macerator_front"), casing, null);
+            var formed = machineModel("steam_grinder_formed", casing, casing,
+                    ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/macerator_front_active"), casing, null);
+            getVariantBuilder(ModBlocks.STEAM_GRINDER.get()).forAllStates(state -> ConfiguredModel.builder()
+                    .modelFile(state.getValue(MultiblockControllerBlock.FORMED) ? formed : idle)
+                    .rotationY(((int) state.getValue(MultiblockControllerBlock.FACING).toYRot() + 180) % 360)
+                    .build());
+            simpleBlockItem(ModBlocks.STEAM_GRINDER.get(), idle);
         }
 
         /** Котлы: куб с одной текстурой на вид (block/boiler/<id>). */
@@ -373,6 +391,7 @@ public final class DataGenerators {
             ModBlocks.itemPipes().forEach(pipe -> dropSelf(pipe.block().get()));
             ModBlocks.boilers().forEach(boiler -> dropSelf(boiler.block().get()));
             ModBlocks.steamMachines().forEach(machine -> dropSelf(machine.block().get()));
+            ModBlocks.multiblockBlocks().forEach(this::dropSelf);
         }
 
         @Override
@@ -382,7 +401,8 @@ public final class DataGenerators {
                     ModBlocks.fluidPipes().map(pipe -> (Block) pipe.block().get()),
                     ModBlocks.itemPipes().map(pipe -> (Block) pipe.block().get()),
                     ModBlocks.boilers().map(boiler -> (Block) boiler.block().get()),
-                    ModBlocks.steamMachines().map(machine -> (Block) machine.block().get()))
+                    ModBlocks.steamMachines().map(machine -> (Block) machine.block().get()),
+                    ModBlocks.multiblockBlocks())
                     .flatMap(blocks -> blocks).toList();
         }
     }
@@ -465,6 +485,11 @@ public final class DataGenerators {
             ModBlocks.itemPipes().forEach(pipe -> addBlock(pipe.block(), pipe.type().displayName()));
             ModBlocks.boilers().forEach(boiler -> addBlock(boiler.block(), boiler.type().displayName()));
             ModBlocks.steamMachines().forEach(machine -> addBlock(machine.block(), machine.displayName()));
+            addBlock(ModBlocks.BRONZE_BRICKS_CASING, "Bronze Bricks Casing");
+            addBlock(ModBlocks.STEAM_GRINDER, "Steam Grinder");
+            add("message.projectgt.multiblock.formed", "Structure formed");
+            add("message.projectgt.multiblock.wrong_block", "Structure incomplete: wrong block %s at %s %s %s");
+            add("message.projectgt.multiblock.wrong_count", "Structure incomplete: %s is %s (needs %s to %s)");
         }
     }
 
@@ -652,6 +677,7 @@ public final class DataGenerators {
             ModBlocks.itemPipes().forEach(pipe -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(pipe.block().get()));
             ModBlocks.boilers().forEach(boiler -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(boiler.block().get()));
             ModBlocks.steamMachines().forEach(machine -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(machine.block().get()));
+            ModBlocks.multiblockBlocks().forEach(block -> tag(BlockTags.MINEABLE_WITH_PICKAXE).add(block));
             for (Material material : Materials.all()) {
                 if (material.hasOre()) {
                     tag(OreTags.ALL_BLOCKS).addTag(OreTags.block(material));
