@@ -1,12 +1,68 @@
 {
-  "parent": "minecraft:block/cube",
+  "parent": "minecraft:block/block",
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "cullface": "down",
+          "texture": "#top"
+        },
+        "east": {
+          "cullface": "east",
+          "texture": "#side"
+        },
+        "north": {
+          "cullface": "north",
+          "texture": "#side"
+        },
+        "south": {
+          "cullface": "south",
+          "texture": "#side"
+        },
+        "up": {
+          "cullface": "up",
+          "texture": "#top"
+        },
+        "west": {
+          "cullface": "west",
+          "texture": "#side"
+        }
+      },
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ]
+    },
+    {
+      "faces": {
+        "up": {
+          "cullface": "up",
+          "texture": "#overlay"
+        }
+      },
+      "from": [
+        -0.01,
+        -0.01,
+        -0.01
+      ],
+      "to": [
+        16.01,
+        16.01,
+        16.01
+      ]
+    }
+  ],
+  "render_type": "minecraft:cutout",
   "textures": {
-    "down": "projectgt:block/boiler/casing_high_pressure",
-    "east": "projectgt:block/boiler/casing_high_pressure",
-    "north": "projectgt:block/boiler/casing_high_pressure",
-    "particle": "projectgt:block/boiler/casing_high_pressure",
-    "south": "projectgt:block/boiler/casing_high_pressure",
-    "up": "projectgt:block/boiler/high_pressure_solar_boiler",
-    "west": "projectgt:block/boiler/casing_high_pressure"
+    "overlay": "projectgt:block/boiler/overlay/high_pressure_solar_boiler",
+    "particle": "projectgt:block/machine/high_pressure_side",
+    "side": "projectgt:block/machine/high_pressure_side",
+    "top": "projectgt:block/machine/high_pressure_top"
   }
 }

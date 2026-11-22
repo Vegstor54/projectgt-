@@ -264,22 +264,41 @@ public final class DataGenerators {
         }
 
         /**
-         * Котлы: лицо и корпус на разных текстурах.
-         * Лицо block/boiler/<id>, корпус block/boiler/casing_<low|high>_pressure.
-         * Угольный и жидкостный: orientable, лицо смотрит по facing. Солнечный: лицо (панель) сверху, поворот не нужен.
+         * Котлы как у паровых машин: корпус block/machine/<low|high>_pressure_side/top, поверх оверлей лица
+         * block/boiler/overlay/<id> (прозрачный, только окошко). Угольный и жидкостный: оверлей на северной
+         * грани, поворот по FACING. Солнечный: оверлей на верхней грани (панель), поворот не нужен.
          */
         private void registerBoilers() {
             ModBlocks.boilers().forEach(boiler -> {
                 Block block = boiler.block().get();
                 String name = boiler.block().getId().getPath();
-                var face = modLoc("block/boiler/" + boiler.type().id());
-                var casing = modLoc("block/boiler/casing_" + (boiler.type().highPressure() ? "high" : "low") + "_pressure");
+                String pressure = boiler.type().highPressure() ? "high" : "low";
+                var side = modLoc("block/machine/" + pressure + "_pressure_side");
+                var top = modLoc("block/machine/" + pressure + "_pressure_top");
+                var overlay = modLoc("block/boiler/overlay/" + boiler.type().id());
                 if (boiler.type().kind() == BoilerKind.SOLAR) {
-                    var model = models().cube(name, casing, face, casing, casing, casing, casing).texture("particle", casing);
+                    var model = models().getBuilder(name)
+                            .parent(new ModelFile.UncheckedModelFile("minecraft:block/block"))
+                            .renderType("minecraft:cutout")
+                            .texture("particle", side)
+                            .texture("side", side)
+                            .texture("top", top)
+                            .texture("overlay", overlay);
+                    model.element().from(0, 0, 0).to(16, 16, 16)
+                            .face(Direction.DOWN).texture("#top").cullface(Direction.DOWN).end()
+                            .face(Direction.UP).texture("#top").cullface(Direction.UP).end()
+                            .face(Direction.NORTH).texture("#side").cullface(Direction.NORTH).end()
+                            .face(Direction.SOUTH).texture("#side").cullface(Direction.SOUTH).end()
+                            .face(Direction.WEST).texture("#side").cullface(Direction.WEST).end()
+                            .face(Direction.EAST).texture("#side").cullface(Direction.EAST).end()
+                            .end();
+                    model.element().from(-0.01f, -0.01f, -0.01f).to(16.01f, 16.01f, 16.01f)
+                            .face(Direction.UP).texture("#overlay").cullface(Direction.UP).end()
+                            .end();
                     simpleBlock(block, model);
                     simpleBlockItem(block, model);
                 } else {
-                    var model = models().orientable(name, casing, face, casing);
+                    var model = machineModel(name, side, top, overlay, side, null);
                     horizontalBlock(block, model);
                     simpleBlockItem(block, model);
                 }
