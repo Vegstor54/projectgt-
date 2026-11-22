@@ -239,7 +239,7 @@ public final class DataGenerators {
                     .build());
             simpleBlockItem(ModBlocks.STEAM_GRINDER.get(), idle);
 
-            // Люки: корпус с оверлеем значка на всех гранях (снаружи структуры виден только внешний).
+            // Люки: корпус, на лицевой грани отверстие со значком вида (стрелка внутрь, наружу, пар).
             partModel(ModBlocks.STEAM_INPUT_BUS.get(), "steam_input_bus", casing, "hatch_item_in");
             partModel(ModBlocks.STEAM_OUTPUT_BUS.get(), "steam_output_bus", casing, "hatch_item_out");
             partModel(ModBlocks.STEAM_HATCH.get(), "steam_input_hatch", casing, "hatch_steam");
@@ -252,14 +252,16 @@ public final class DataGenerators {
                     .texture("particle", casing)
                     .texture("all", casing)
                     .texture("overlay", ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/machine/overlay/" + overlay));
-            for (float grow : new float[] {0f, 0.01f}) {
-                var element = model.element().from(-grow, -grow, -grow).to(16 + grow, 16 + grow, 16 + grow);
-                for (Direction dir : Direction.values()) {
-                    element.face(dir).texture(grow == 0f ? "#all" : "#overlay").cullface(dir).end();
-                }
-                element.end();
+            // Корпус со всех сторон, отверстие-оверлей только на лицевой (северной) грани; поворот по FACING.
+            var shell = model.element().from(0, 0, 0).to(16, 16, 16);
+            for (Direction dir : Direction.values()) {
+                shell.face(dir).texture("#all").cullface(dir).end();
             }
-            simpleBlock(block, model);
+            shell.end();
+            model.element().from(-0.01f, -0.01f, -0.01f).to(16.01f, 16.01f, 16.01f)
+                    .face(Direction.NORTH).texture("#overlay").cullface(Direction.NORTH).end()
+                    .end();
+            directionalBlock(block, model);
             simpleBlockItem(block, model);
         }
 
