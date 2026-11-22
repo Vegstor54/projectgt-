@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 import com.vgst54.projectgt.ProjectGT;
+import com.vgst54.projectgt.boiler.BoilerKind;
 import com.vgst54.projectgt.item.ToolType;
 import com.vgst54.projectgt.material.Heat;
 import com.vgst54.projectgt.material.Material;
@@ -262,14 +263,26 @@ public final class DataGenerators {
             simpleBlockItem(block, model);
         }
 
-        /** Котлы: куб с одной текстурой на вид (block/boiler/<id>). */
+        /**
+         * Котлы: лицо и корпус на разных текстурах.
+         * Лицо block/boiler/<id>, корпус block/boiler/casing_<low|high>_pressure.
+         * Угольный и жидкостный: orientable, лицо смотрит по facing. Солнечный: лицо (панель) сверху, поворот не нужен.
+         */
         private void registerBoilers() {
             ModBlocks.boilers().forEach(boiler -> {
                 Block block = boiler.block().get();
-                var model = models().cubeAll(boiler.block().getId().getPath(),
-                        ResourceLocation.fromNamespaceAndPath(ProjectGT.MODID, "block/boiler/" + boiler.type().id()));
-                simpleBlock(block, model);
-                simpleBlockItem(block, model);
+                String name = boiler.block().getId().getPath();
+                var face = modLoc("block/boiler/" + boiler.type().id());
+                var casing = modLoc("block/boiler/casing_" + (boiler.type().highPressure() ? "high" : "low") + "_pressure");
+                if (boiler.type().kind() == BoilerKind.SOLAR) {
+                    var model = models().cube(name, casing, face, casing, casing, casing, casing).texture("particle", casing);
+                    simpleBlock(block, model);
+                    simpleBlockItem(block, model);
+                } else {
+                    var model = models().orientable(name, casing, face, casing);
+                    horizontalBlock(block, model);
+                    simpleBlockItem(block, model);
+                }
             });
         }
 

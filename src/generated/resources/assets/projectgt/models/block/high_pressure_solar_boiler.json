@@ -1,6 +1,12 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "all": "projectgt:block/boiler/high_pressure_solar_boiler"
+    "down": "projectgt:block/boiler/casing_high_pressure",
+    "east": "projectgt:block/boiler/casing_high_pressure",
+    "north": "projectgt:block/boiler/casing_high_pressure",
+    "particle": "projectgt:block/boiler/casing_high_pressure",
+    "south": "projectgt:block/boiler/casing_high_pressure",
+    "up": "projectgt:block/boiler/high_pressure_solar_boiler",
+    "west": "projectgt:block/boiler/casing_high_pressure"
   }
 }
