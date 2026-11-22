@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/orientable",
   "textures": {
-    "all": "projectgt:block/boiler/low_pressure_liquid_boiler"
+    "front": "projectgt:block/boiler/low_pressure_liquid_boiler",
+    "side": "projectgt:block/boiler/casing_low_pressure",
+    "top": "projectgt:block/boiler/casing_low_pressure"
   }
 }
